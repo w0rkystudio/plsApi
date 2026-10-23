@@ -1,0 +1,1722 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>plsApi Modding Guide</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;600&family=Patrick+Hand&display=swap">
+<style>
+html, body { margin: 0; }
+[hidden] { display: none !important; }
+/* Layout: sticky header + left "menu" table of contents + one reading column; the hero is a live canvas mock of the game screen. */
+:root {
+  --bg: #F2F5F7;
+  --surface: #FFFFFF;
+  --paper: #FBF3E4;
+  --ink: #2A1A1F;
+  --muted: #66565C;
+  --line: #DDD4D1;
+  --accent: #A3243A;
+  --accent-ink: #FFFFFF;
+  --accent-soft: #F6E3E6;
+  --sky: #2F7FB5;
+  --gold: #A87108;
+  --code-bg: #221A1E;
+  --code-fg: #EDE4E0;
+  --code-line: #3A2E33;
+  --font-display: "Patrick Hand", "Comic Sans MS", "Segoe Print", cursive;
+  --font-body: "Atkinson Hyperlegible", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, "Cascadia Mono", monospace;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #151013; --surface: #1E171B; --paper: #2A2024; --ink: #F1E8E4; --muted: #B4A4A9;
+    --line: #3A2E33; --accent: #E5607A; --accent-ink: #1A0E12; --accent-soft: #3A1E26;
+    --sky: #7CC0EA; --gold: #F0B847; --code-bg: #0F0B0D; --code-fg: #EDE4E0; --code-line: #2E2428;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #151013; --surface: #1E171B; --paper: #2A2024; --ink: #F1E8E4; --muted: #B4A4A9;
+  --line: #3A2E33; --accent: #E5607A; --accent-ink: #1A0E12; --accent-soft: #3A1E26;
+  --sky: #7CC0EA; --gold: #F0B847; --code-bg: #0F0B0D; --code-fg: #EDE4E0; --code-line: #2E2428;
+  color-scheme: dark;
+}
+
+/* language switch: data-l="tr" / data-l="en" */
+:root:not([data-lang="en"]) [data-l="en"] { display: none !important; }
+:root[data-lang="en"] [data-l="tr"] { display: none !important; }
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 16px;
+  line-height: 1.6;
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px);
+  z-index: 10; background: var(--surface);
+}
+a { color: var(--sky); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+/* header */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: var(--surface); border-bottom: 1px solid var(--line);
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.top-in {
+  max-width: 1120px; margin: 0 auto; height: 56px;
+  display: flex; align-items: center; gap: 16px;
+}
+.brand { font-family: var(--font-display); font-size: 28px; line-height: 1; color: var(--accent); text-decoration: none; }
+.brand-sub { font-size: 13px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.spacer { flex: 1; }
+.lang { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; gap: 2px; flex: none; }
+.lang button {
+  font: 600 13px/1 var(--font-body); letter-spacing: .06em; border: 0; cursor: pointer;
+  padding: 7px 12px; border-radius: 999px; background: transparent; color: var(--muted);
+}
+.lang button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); }
+
+/* page grid */
+.page {
+  max-width: 1120px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 32px 80px;
+  display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 48px;
+}
+.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 80px); align-self: start; }
+.toc h2 { font-family: var(--font-display); font-size: 24px; font-weight: 400; margin: 0 0 8px; color: var(--accent); }
+.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; counter-reset: toc; }
+.toc li { counter-increment: toc; }
+.toc a {
+  display: grid; grid-template-columns: 26px 1fr; gap: 4px; padding: 6px 8px; border-radius: 8px;
+  text-decoration: none; color: var(--muted); font-size: 14.5px; line-height: 1.35;
+}
+.toc a::before { content: counter(toc, decimal-leading-zero); font-family: var(--font-mono); font-size: 12px; padding-top: 2px; color: var(--gold); }
+.toc a:hover, .toc a.on { background: var(--accent-soft); color: var(--ink); }
+
+main { min-width: 0; }
+.hero h1 { font-family: var(--font-display); font-weight: 400; font-size: clamp(44px, 7vw, 68px); line-height: 1; margin: 0; color: var(--accent); }
+.hero .lead { font-size: 19px; max-width: 62ch; margin: 12px 0 24px; text-wrap: pretty; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 24px; padding: 0; list-style: none; }
+.chips li { font-size: 13px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); background: var(--surface); }
+
+/* playground */
+.play { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.screen { position: relative; background: #9fd3f0; }
+.screen canvas { display: block; width: 100%; height: auto; aspect-ratio: 16 / 9; }
+.screen .tag {
+  position: absolute; right: 10px; bottom: 10px; font: 600 11px/1 var(--font-mono); letter-spacing: .08em;
+  text-transform: uppercase; color: #fff; background: rgba(0,0,0,.45); padding: 5px 8px; border-radius: 6px;
+}
+.controls { padding: 16px; display: grid; gap: 14px; border-top: 1px solid var(--line); }
+.row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field.grow { flex: 1 1 260px; }
+.field label, .lbl { font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+input[type="text"], input[type="number"] {
+  font: 15px/1.2 var(--font-body); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 8px; padding: 9px 10px; width: 100%;
+}
+input[type="number"] { width: 96px; }
+.swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+.sw {
+  width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid var(--line);
+  box-shadow: inset 0 0 0 2px var(--surface);
+}
+.sw[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 2px var(--surface), 0 0 0 2px var(--accent-soft); }
+.btn {
+  font: 700 14px/1 var(--font-body); cursor: pointer; border-radius: 8px; padding: 11px 16px;
+  border: 1px solid var(--accent); background: var(--accent); color: var(--accent-ink);
+}
+.btn.ghost { background: transparent; color: var(--ink); border-color: var(--line); }
+.callline { display: flex; gap: 8px; align-items: center; background: var(--code-bg); border-radius: 8px; padding: 6px 6px 6px 12px; min-width: 0; }
+.callline code { flex: 1; min-width: 0; overflow-x: auto; white-space: pre; color: var(--code-fg); font: 14px/1.5 var(--font-mono); }
+
+/* sections */
+section { padding-top: 56px; scroll-margin-top: 72px; }
+section > h2 {
+  font-family: var(--font-display); font-weight: 400; font-size: 36px; line-height: 1.1; margin: 0 0 12px;
+  text-wrap: balance; display: flex; gap: 12px; align-items: baseline;
+}
+section > h2 .n { font-family: var(--font-mono); font-size: 15px; color: var(--gold); letter-spacing: .04em; }
+h3 { font-size: 18px; margin: 28px 0 8px; }
+p, li { max-width: 68ch; }
+p { margin: 0 0 12px; }
+ul, ol { padding-left: 22px; margin: 0 0 12px; }
+code.i { font-family: var(--font-mono); font-size: .88em; background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+kbd { font-family: var(--font-mono); font-size: .85em; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 5px; background: var(--surface); }
+
+/* code blocks */
+.code { margin: 12px 0 16px; border-radius: var(--radius); background: var(--code-bg); overflow: hidden; }
+.code-head {
+  display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 14px;
+  border-bottom: 1px solid var(--code-line); color: #B9ADA9; font: 12.5px/1 var(--font-mono);
+}
+.code-head .file { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.copy {
+  font: 600 12px/1 var(--font-body); color: #F1E8E4; background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14); border-radius: 6px; padding: 7px 10px; cursor: pointer; white-space: nowrap;
+}
+.copy:hover { background: rgba(255,255,255,.16); }
+.copy.done { background: #2E6B47; border-color: #3F8B5F; }
+.code pre { margin: 0; padding: 14px 16px; overflow-x: auto; }
+.code pre code { font: 13.5px/1.6 var(--font-mono); color: var(--code-fg); white-space: pre; tab-size: 4; }
+.token.comment, .token.prolog { color: #8F9BA5; font-style: italic; }
+.token.keyword, .token.tag, .token.boolean { color: #FF8FA3; }
+.token.string, .token.attr-value, .token.char { color: #F5C76B; }
+.token.class-name, .token.attr-name, .token.namespace { color: #86C9F0; }
+.token.number { color: #C9AEFF; }
+.token.function { color: #9FE2B4; }
+.token.punctuation, .token.operator { color: #CFC5C1; }
+
+/* misc blocks */
+.note {
+  border: 1px solid var(--line); border-left: 4px solid var(--sky); background: var(--surface);
+  border-radius: 8px; padding: 12px 14px; margin: 12px 0 16px;
+}
+.note.warn { border-left-color: var(--gold); }
+.note p:last-child { margin: 0; }
+.tree { font: 13.5px/1.6 var(--font-mono); background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; overflow-x: auto; white-space: pre; margin: 12px 0 16px; }
+.tree b { color: var(--accent); font-weight: 600; }
+.tablewrap { overflow-x: auto; margin: 12px 0 16px; border: 1px solid var(--line); border-radius: var(--radius); }
+table { border-collapse: collapse; width: 100%; font-size: 14.5px; background: var(--surface); }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 12px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); background: var(--bg); }
+tr:last-child td { border-bottom: 0; }
+td code { font-family: var(--font-mono); font-size: 13px; white-space: nowrap; }
+.compare { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin: 12px 0 16px; }
+.compare > div { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; min-width: 0; }
+.compare h4 { margin: 0 0 6px; font-family: var(--font-mono); font-size: 15px; color: var(--accent); }
+.compare p { margin: 0; font-size: 15px; }
+.steps { counter-reset: s; list-style: none; padding: 0; }
+.steps > li { counter-increment: s; position: relative; padding-left: 36px; margin-bottom: 10px; }
+.steps > li::before {
+  content: counter(s); position: absolute; left: 0; top: 1px; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--accent); color: var(--accent-ink); font: 700 13px/24px var(--font-body); text-align: center;
+}
+.shoulders { margin: 12px 0 16px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; overflow-x: auto; }
+.shoulders svg { display: block; width: 100%; max-width: 520px; min-width: 360px; height: auto; margin: 0 auto; }
+.sh-body { fill: var(--surface); stroke: var(--line); stroke-width: 2; stroke-dasharray: 6 4; }
+.sh-part { fill: var(--accent-soft); stroke: var(--muted); stroke-width: 1.5; }
+.sh-axis { stroke: var(--muted); stroke-width: 1.5; fill: none; }
+.sh-arrow { fill: var(--muted); }
+.sh-guide { stroke: var(--sky); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.sh-dot { fill: var(--accent); }
+.sh-t { fill: var(--ink); font: 600 13px var(--font-mono); }
+.sh-s { fill: var(--muted); font: 12px var(--font-mono); }
+footer { margin-top: 64px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
+
+@media (max-width: 860px) {
+  .page { grid-template-columns: minmax(0, 1fr); gap: 24px; padding-top: 20px; }
+  .toc { position: static; }
+  .toc ol { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
+  .brand-sub { display: none; }
+}
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#top">plsApi</a>
+    <span class="brand-sub">Check Please! Demo · BepInEx 5 · C#</span>
+    <span class="spacer"></span>
+    <div class="lang" role="group" aria-label="Language / Dil">
+      <button type="button" id="lang-tr" data-set-lang="tr" aria-pressed="true">TR</button>
+      <button type="button" id="lang-en" data-set-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </div>
+</header>
+
+<div class="page" id="top">
+  <nav class="toc" aria-label="Contents">
+    <h2><span data-l="tr">Menü</span><span data-l="en">Menu</span></h2>
+    <ol>
+      <li><a href="#requirements"><span data-l="tr">Gereksinimler</span><span data-l="en">Requirements</span></a></li>
+      <li><a href="#install"><span data-l="tr">plsApi kurulumu</span><span data-l="en">Install plsApi</span></a></li>
+      <li><a href="#project"><span data-l="tr">Mod projesi</span><span data-l="en">Mod project</span></a></li>
+      <li><a href="#first-mod"><span data-l="tr">İlk mod</span><span data-l="en">First mod</span></a></li>
+      <li><a href="#print-game">print_game</a></li>
+      <li><a href="#print-log">print_log</a></li>
+      <li><a href="#foods"><span data-l="tr">Özel yemekler</span><span data-l="en">Custom foods</span></a></li>
+      <li><a href="#customers"><span data-l="tr">Özel müşteriler</span><span data-l="en">Custom customers</span></a></li>
+      <li><a href="#example"><span data-l="tr">Tam örnek</span><span data-l="en">Full example</span></a></li>
+      <li><a href="#build"><span data-l="tr">Derle ve çalıştır</span><span data-l="en">Build and run</span></a></li>
+      <li><a href="#config"><span data-l="tr">Ayarlar</span><span data-l="en">Settings</span></a></li>
+      <li><a href="#troubleshooting"><span data-l="tr">Sorun giderme</span><span data-l="en">Troubleshooting</span></a></li>
+      <li><a href="#reference"><span data-l="tr">API özeti</span><span data-l="en">API reference</span></a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <div class="hero">
+      <h1>plsApi</h1>
+      <p class="lead">
+        <span data-l="tr"><b>Check Please! Demo</b> için C# modlama API'si. Tek satırla oyun ekranının sol üstüne yazı bas (<code class="i">print_game</code>), sadece <code class="i">LogOutput.log</code> dosyasına kayıt düş (<code class="i">print_log</code>), kendi sprite'ı ve ismiyle menüye yeni yemekler ekle (<code class="i">Foods</code>) ya da animasyonlu, oturma tercihleri olan yeni müşteriler getir (<code class="i">Customers</code>).</span>
+        <span data-l="en">A C# modding API for <b>Check Please! Demo</b>. Print text to the top-left of the game screen in one line (<code class="i">print_game</code>), write a line only to <code class="i">LogOutput.log</code> (<code class="i">print_log</code>), add new dishes with their own sprite and name (<code class="i">Foods</code>), or bring in new animated customers with their own seat preferences (<code class="i">Customers</code>).</span>
+      </p>
+      <ul class="chips">
+        <li>plsApi.dll v1.3.0</li>
+        <li>BepInEx 5.4.23</li>
+        <li>Unity 6000.5 · Mono</li>
+        <li>netstandard2.1</li>
+      </ul>
+
+      <div class="play">
+        <div class="screen">
+          <canvas id="scene" width="1280" height="720" aria-label="Game screen preview with print_game messages"></canvas>
+          <span class="tag" data-l="tr">Önizleme</span><span class="tag" data-l="en">Preview</span>
+        </div>
+        <div class="controls">
+          <div class="row">
+            <div class="field grow">
+              <label for="msg"><span data-l="tr">Mesaj</span><span data-l="en">Message</span></label>
+              <input type="text" id="msg" maxlength="140" autocomplete="off">
+            </div>
+            <div class="field">
+              <label for="dur"><span data-l="tr">Süre (sn)</span><span data-l="en">Duration (s)</span></label>
+              <input type="number" id="dur" min="0.5" max="60" step="0.5" value="5">
+            </div>
+          </div>
+          <div class="row">
+            <div class="field">
+              <span class="lbl"><span data-l="tr">Renk</span><span data-l="en">Color</span></span>
+              <div class="swatches" id="swatches" role="group" aria-label="Color"></div>
+            </div>
+            <span class="spacer"></span>
+            <button type="button" class="btn ghost" id="clear"><span data-l="tr">Ekranı temizle</span><span data-l="en">Clear screen</span></button>
+            <button type="button" class="btn" id="run">print_game ▶</button>
+          </div>
+          <div class="callline">
+            <code id="call"></code>
+            <button type="button" class="copy" id="copy-call"><span data-l="tr">Kopyala</span><span data-l="en">Copy</span></button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1 -->
+    <section id="requirements">
+      <h2><span class="n">01</span><span data-l="tr">Gereksinimler</span><span data-l="en">Requirements</span></h2>
+      <ul data-l="tr">
+        <li><b>Check Please! Demo</b> (Steam).</li>
+        <li>Oyun klasörüne kurulmuş <b>BepInEx 5</b> (x64, Mono). Oyunu bir kez açınca <code class="i">BepInEx\LogOutput.log</code> oluşmalı.</li>
+        <li><b>.NET SDK</b> 6 veya üstü (<code class="i">dotnet --version</code> ile kontrol et).</li>
+        <li>Bir kod editörü: Visual Studio, Rider ya da VS Code.</li>
+      </ul>
+      <ul data-l="en">
+        <li><b>Check Please! Demo</b> (Steam).</li>
+        <li><b>BepInEx 5</b> (x64, Mono) installed in the game folder. After starting the game once, <code class="i">BepInEx\LogOutput.log</code> should exist.</li>
+        <li><b>.NET SDK</b> 6 or newer (check with <code class="i">dotnet --version</code>).</li>
+        <li>A code editor: Visual Studio, Rider or VS Code.</li>
+      </ul>
+    </section>
+
+    <!-- 2 -->
+    <section id="install">
+      <h2><span class="n">02</span><span data-l="tr">plsApi kurulumu</span><span data-l="en">Install plsApi</span></h2>
+      <p data-l="tr"><a href="https://github.com/w0rkystudio/plsApi/releases/latest">GitHub Releases</a> sayfasından <code class="i">plsApi-v1.3.0.zip</code> dosyasını indir ve oyun klasörüne aç. Aynı sayfada hazır proje şablonu (<code class="i">TemplateProject</code>) ve örnek modlar (<code class="i">ExampleMods</code>) da var.</p>
+      <p data-l="en">Download <code class="i">plsApi-v1.3.0.zip</code> from the <a href="https://github.com/w0rkystudio/plsApi/releases/latest">GitHub Releases</a> page and unzip it into the game folder. The same page has the project template (<code class="i">TemplateProject</code>) and the example mods (<code class="i">ExampleMods</code>).</p>
+      <p data-l="tr"><code class="i">plsApi.dll</code> dosyasını (ve isteğe bağlı olarak editörde açıklama göstermek için <code class="i">plsApi.xml</code>) şu klasöre koy:</p>
+      <p data-l="en">Put <code class="i">plsApi.dll</code> (and optionally <code class="i">plsApi.xml</code>, which gives your editor tooltips) into this folder:</p>
+      <div class="tree">Check Please! Demo\
+└─ BepInEx\
+   ├─ core\
+   ├─ config\
+   ├─ LogOutput.log
+   └─ plugins\
+      ├─ <b>plsApi\</b>
+      │  ├─ <b>plsApi.dll</b>
+      │  └─ <b>plsApi.xml</b>
+      └─ MyMod\
+         └─ MyMod.dll</div>
+      <p data-l="tr">Oyunu başlat ve <code class="i">BepInEx\LogOutput.log</code> dosyasında şu satırı ara:</p>
+      <p data-l="en">Start the game and look for this line in <code class="i">BepInEx\LogOutput.log</code>:</p>
+      <div class="code" data-src="log-loaded" data-lang="none" data-file="LogOutput.log"></div>
+    </section>
+
+    <!-- 3 -->
+    <section id="project">
+      <h2><span class="n">03</span><span data-l="tr">Mod projesi oluştur</span><span data-l="en">Create a mod project</span></h2>
+      <h3><span data-l="tr">En kolayı: TemplateProject şablonu</span><span data-l="en">Easiest: the TemplateProject template</span></h3>
+      <p data-l="tr">plsApi ile gelen <code class="i">TemplateProject</code> klasörü hazır bir mod projesidir. plsApi, BepInEx, Harmony, oyunun kodu (<code class="i">CheckPlease.Runtime</code>), Input System, TextMeshPro, DOTween ve tüm <code class="i">UnityEngine*</code> DLL'leri baştan bağlıdır. Derleyince DLL ve <code class="i">sprites</code> klasörü kendiliğinden <code class="i">BepInEx\plugins\&lt;ModAdı&gt;</code> içine kopyalanır. Şablonu bir kez kur:</p>
+      <p data-l="en">The <code class="i">TemplateProject</code> folder that ships with plsApi is a ready mod project. plsApi, BepInEx, Harmony, the game code (<code class="i">CheckPlease.Runtime</code>), Input System, TextMeshPro, DOTween and every <code class="i">UnityEngine*</code> DLL are already referenced. Building copies the DLL and the <code class="i">sprites</code> folder into <code class="i">BepInEx\plugins\&lt;ModName&gt;</code> on its own. Install the template once:</p>
+      <div class="code" data-src="tpl-install" data-lang="none" data-file="Terminal"></div>
+      <p data-l="tr">Sonra her yeni mod için tek komut yeter. Ya da Visual Studio'da <b>Yeni proje oluştur</b> ekranında <b>Check Please! Mod (plsApi)</b> diye ara.</p>
+      <p data-l="en">Then each new mod is one command. Or in Visual Studio, search for <b>Check Please! Mod (plsApi)</b> on the <b>Create a new project</b> screen.</p>
+      <div class="code" data-src="tpl-new" data-lang="none" data-file="Terminal"></div>
+      <div class="tree">ExtraFoods\
+├─ ExtraFoods.sln              <span data-l="tr">← Visual Studio ile aç</span><span data-l="en">← open in Visual Studio</span>
+└─ ExtraFoods\
+   ├─ ExtraFoods.csproj        <span data-l="tr">← tüm DLL'ler bağlı, GameDir burada</span><span data-l="en">← every DLL referenced, GameDir lives here</span>
+   ├─ Plugin.cs                <span data-l="tr">← print_game, print_log, Foods örneği</span><span data-l="en">← print_game, print_log, Foods example</span>
+   ├─ Patches.cs               <span data-l="tr">← örnek Harmony yaması</span><span data-l="en">← example Harmony patch</span>
+   └─ sprites\                 <span data-l="tr">← PNG'lerin</span><span data-l="en">← your PNGs</span></div>
+      <h3><span data-l="tr">Elle kurmak istersen</span><span data-l="en">Setting it up by hand</span></h3>
+      <p data-l="tr">Yeni bir klasör aç (ör. <code class="i">MyMod</code>) ve içine aşağıdaki proje dosyasını koy. Oyun başka bir yerdeyse sadece <code class="i">GameDir</code> satırını değiştir.</p>
+      <p data-l="en">Make a new folder (e.g. <code class="i">MyMod</code>) and put the project file below inside it. If the game is installed somewhere else, change only the <code class="i">GameDir</code> line.</p>
+      <div class="code" data-src="csproj" data-lang="markup" data-file="MyMod/MyMod.csproj"></div>
+      <div class="note warn">
+        <p data-l="tr"><b>Visual Studio kullanıyorsan:</b> <b>"Sınıf Kitaplığı (.NET Framework)"</b> şablonunu <b>seçme</b>. O şablon eski bir proje dosyası yapar ve genelde .NET Framework 3.5/4.x hedefler; plsApi ve oyunun DLL'leri o projede okunamaz, her şey kırmızı çizilir. Bunun yerine <b>"Sınıf Kitaplığı"</b> (.NET) şablonuyla proje aç, sonra oluşan <code class="i">.csproj</code> dosyasının tüm içeriğini silip yukarıdaki kodu yapıştır ve <code class="i">AssemblyName</code> kısmını kendi mod adınla değiştir.</p>
+        <p data-l="en"><b>Using Visual Studio?</b> Do <b>not</b> pick the <b>"Class Library (.NET Framework)"</b> template. It creates an old-style project that targets .NET Framework 3.5/4.x, which can't read plsApi or the game's DLLs, so everything gets a red underline. Create the project with the <b>"Class Library"</b> (.NET) template instead, then replace the whole <code class="i">.csproj</code> with the code above and change <code class="i">AssemblyName</code> to your mod's name.</p>
+      </div>
+      <div class="note">
+        <p data-l="tr"><b>Neden netstandard2.1?</b> Oyunun Unity sürümü (6000.5, Mono) .NET Standard 2.1 kütüphanelerini doğrudan yükler. <code class="i">Private=false</code> ise oyunun kendi DLL'lerinin mod klasörüne kopyalanmasını engeller.</p>
+        <p data-l="en"><b>Why netstandard2.1?</b> The game's Unity version (6000.5, Mono) loads .NET Standard 2.1 libraries directly. <code class="i">Private=false</code> stops the game's own DLLs from being copied next to your mod.</p>
+      </div>
+    </section>
+
+    <!-- 4 -->
+    <section id="first-mod">
+      <h2><span class="n">04</span><span data-l="tr">İlk mod</span><span data-l="en">Your first mod</span></h2>
+      <p data-l="tr">Aynı klasöre <code class="i">MyMod.cs</code> dosyasını ekle. <code class="i">using static plsApi.Pls;</code> satırı sayesinde fonksiyonları başına bir şey yazmadan çağırabilirsin.</p>
+      <p data-l="en">Add <code class="i">MyMod.cs</code> to the same folder. The <code class="i">using static plsApi.Pls;</code> line lets you call the functions without any prefix.</p>
+      <div class="code" data-src="first" data-lang="csharp" data-file="MyMod/MyMod.cs"></div>
+      <div class="note warn">
+        <p data-l="tr"><code class="i">[BepInDependency(PlsApiPlugin.GUID)]</code> satırını unutma. BepInEx'e modunun plsApi'den <b>sonra</b> yüklenmesi gerektiğini söyler; plsApi kurulu değilse modun da yüklenmez ve log'a nedenini yazar.</p>
+        <p data-l="en">Don't forget <code class="i">[BepInDependency(PlsApiPlugin.GUID)]</code>. It tells BepInEx to load your mod <b>after</b> plsApi; if plsApi is missing, your mod is skipped and the log says why.</p>
+      </div>
+      <p data-l="tr">Using static istemiyorsan sınıf adıyla da çağırabilirsin:</p>
+      <p data-l="en">If you'd rather not use <code class="i">using static</code>, call them through the class:</p>
+      <div class="code" data-src="noStatic" data-lang="csharp" data-file="C#"></div>
+    </section>
+
+    <!-- 5 -->
+    <section id="print-game">
+      <h2><span class="n">05</span>print_game</h2>
+      <p data-l="tr">Ekranın <b>sol üst köşesine</b> mesaj yazar. Mesajlar alt alta dizilir, süreleri dolunca yarım saniyede solarak kaybolur. Unity zengin metin etiketleri (<code class="i">&lt;b&gt;</code>, <code class="i">&lt;i&gt;</code>, <code class="i">&lt;color=...&gt;</code>, <code class="i">&lt;size=...&gt;</code>) desteklenir.</p>
+      <p data-l="en">Writes a message in the <b>top-left corner</b> of the screen. Messages stack downwards and fade out over half a second when their time is up. Unity rich text tags (<code class="i">&lt;b&gt;</code>, <code class="i">&lt;i&gt;</code>, <code class="i">&lt;color=...&gt;</code>, <code class="i">&lt;size=...&gt;</code>) work.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th><span data-l="tr">Çağrı</span><span data-l="en">Call</span></th><th><span data-l="tr">Ne yapar</span><span data-l="en">What it does</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>print_game(object message)</code></td><td><span data-l="tr">Beyaz, varsayılan süre (5 sn).</span><span data-l="en">White, default duration (5 s).</span></td></tr>
+            <tr><td><code>print_game(object message, float duration)</code></td><td><span data-l="tr">Beyaz, verilen saniye kadar.</span><span data-l="en">White, for the given number of seconds.</span></td></tr>
+            <tr><td><code>print_game(object message, Color color)</code></td><td><span data-l="tr">Renkli, varsayılan süre.</span><span data-l="en">Colored, default duration.</span></td></tr>
+            <tr><td><code>print_game(object message, Color color, float duration)</code></td><td><span data-l="tr">Renkli, verilen saniye kadar.</span><span data-l="en">Colored, for the given number of seconds.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3><span data-l="tr">Basit kullanım</span><span data-l="en">Basic use</span></h3>
+      <div class="code" data-src="pg-basic" data-lang="csharp" data-file="C#"></div>
+
+      <h3><span data-l="tr">Süre ve renk</span><span data-l="en">Duration and color</span></h3>
+      <div class="code" data-src="pg-color" data-lang="csharp" data-file="C#"></div>
+
+      <h3><span data-l="tr">Zengin metin</span><span data-l="en">Rich text</span></h3>
+      <div class="code" data-src="pg-rich" data-lang="csharp" data-file="C#"></div>
+
+      <h3><span data-l="tr">Sayılar ve değişkenler</span><span data-l="en">Numbers and variables</span></h3>
+      <p data-l="tr"><code class="i">message</code> parametresi <code class="i">object</code> olduğu için sayı, bool, vektör, her şeyi gönderebilirsin; <code class="i">ToString()</code> kullanılır. <code class="i">null</code> gönderirsen ekranda <code class="i">null</code> yazar.</p>
+      <p data-l="en">The <code class="i">message</code> parameter is an <code class="i">object</code>, so you can pass numbers, bools, vectors, anything; <code class="i">ToString()</code> is used. Passing <code class="i">null</code> prints <code class="i">null</code>.</p>
+      <div class="code" data-src="pg-vars" data-lang="csharp" data-file="C#"></div>
+
+      <div class="note">
+        <p data-l="tr"><b>Süre ne zaman başlar?</b> Mesajın süresi, ekranda <b>ilk göründüğü kareden</b> itibaren sayılır. Oyun açılırken (ilk kare yaklaşık 9 sn sonra gelir) <code class="i">Awake</code> içinde yazdığın mesajlar kaybolmaz. Oyun duraklatılsa bile (<code class="i">Time.timeScale = 0</code>) geri sayım devam eder. Aynı anda en fazla 12 mesaj görünür; fazlası gelince en eskisi silinir.</p>
+        <p data-l="en"><b>When does the timer start?</b> A message's duration counts from the <b>first frame it is drawn</b>. Messages you send in <code class="i">Awake</code> while the game is still loading (the first frame arrives about 9 s in) are not lost. The countdown keeps running while the game is paused (<code class="i">Time.timeScale = 0</code>). At most 12 messages show at once; the oldest is dropped when a new one arrives.</p>
+      </div>
+    </section>
+
+    <!-- 6 -->
+    <section id="print-log">
+      <h2><span class="n">06</span>print_log</h2>
+      <p data-l="tr">Mesajı <b>yalnızca</b> <code class="i">BepInEx\LogOutput.log</code> dosyasına yazar. Ekranda görünmez, BepInEx konsoluna da gitmez. Satırın başına modunun adı otomatik eklenir (<code class="i">[BepInPlugin]</code> içindeki isim).</p>
+      <p data-l="en">Writes the message <b>only</b> to <code class="i">BepInEx\LogOutput.log</code>. It doesn't show on screen and doesn't go to the BepInEx console. Your mod's name (the one in <code class="i">[BepInPlugin]</code>) is added to the start of the line automatically.</p>
+      <div class="code" data-src="pl-basic" data-lang="csharp" data-file="C#"></div>
+      <p data-l="tr">LogOutput.log içinde böyle görünür:</p>
+      <p data-l="en">In LogOutput.log it looks like this:</p>
+      <div class="code" data-src="pl-out" data-lang="none" data-file="BepInEx\LogOutput.log"></div>
+
+      <div class="compare">
+        <div>
+          <h4>print_game</h4>
+          <p data-l="tr">Oyuncunun görmesi gereken şeyler: bildirimler, sayaçlar, "mod açık" mesajı.</p>
+          <p data-l="en">Things the player should see: notifications, counters, a "mod enabled" message.</p>
+        </div>
+        <div>
+          <h4>print_log</h4>
+          <p data-l="tr">Senin görmen gereken şeyler: hata ayıklama, değer takibi, hangi kodun çalıştığı.</p>
+          <p data-l="en">Things you need to see: debugging, tracking values, which code ran.</p>
+        </div>
+      </div>
+      <div class="note">
+        <p data-l="tr">Her <code class="i">print_log</code> çağrısı dosyaya hemen yazılır, oyunu kapatmadan dosyayı açıp okuyabilirsin. BepInEx.cfg içinde disk log'u kapatılmışsa mesajlar <code class="i">BepInEx\plsApi.log</code> dosyasına gider.</p>
+        <p data-l="en">Each <code class="i">print_log</code> call is written to the file right away, so you can open it while the game is running. If disk logging is turned off in BepInEx.cfg, messages go to <code class="i">BepInEx\plsApi.log</code> instead.</p>
+      </div>
+    </section>
+
+    <!-- foods -->
+    <section id="foods">
+      <h2><span class="n">07</span><span data-l="tr">Özel yemekler</span><span data-l="en">Custom foods</span></h2>
+      <p data-l="tr"><code class="i">Foods.Register</code> menüye yeni bir yemek ekler. Yemek her haritada baştan açık olur; sipariş balonunda, pastada, garsonun elinde ve almanakta kendi sprite'ı ve ismiyle görünür. Müşteriler onu oyunun kendi yemekleri gibi seçer: ırklarının sevdiği malzemeler şansı artırır, sevmedikleri azaltır, alerjisi olanlar kendi başına asla sipariş etmez.</p>
+      <p data-l="en"><code class="i">Foods.Register</code> adds a new dish to the menu. It is available from the start on every map and shows with its own sprite and name in the order bubble, on the pass, in the waiter's hands and in the almanac. Customers pick it like the game's own dishes: ingredients their race likes raise the odds, disliked ones lower them, and customers who are allergic never order it on their own.</p>
+
+      <h3><span data-l="tr">1. Sprite'ı hazırla</span><span data-l="en">1. Prepare the sprite</span></h3>
+      <ul data-l="tr">
+        <li>Arka planı şeffaf bir <b>PNG</b> (JPG de olur ama şeffaf olmaz).</li>
+        <li>Kare olsun; 256×256 piksel yeterli. plsApi sprite'ı oyunun kendi yemekleriyle aynı boyuta ölçekler, çözünürlük önemli değil. Daha büyük ya da küçük istersen <code class="i">SpriteScale</code> kullan.</li>
+        <li>Projende bir <code class="i">sprites</code> klasörüne koy ve <code class="i">.csproj</code> dosyasına aşağıdaki satırları ekle; derleyince DLL'in yanına kopyalanır.</li>
+      </ul>
+      <ul data-l="en">
+        <li>A <b>PNG</b> with a transparent background (JPG works too, without transparency).</li>
+        <li>Make it square; 256×256 pixels is plenty. plsApi scales the sprite to the same size as the game's own dishes, so resolution doesn't matter. Use <code class="i">SpriteScale</code> to make it bigger or smaller.</li>
+        <li>Put it in a <code class="i">sprites</code> folder in your project and add the lines below to your <code class="i">.csproj</code>; building copies it next to your DLL.</li>
+      </ul>
+      <div class="code" data-src="food-csproj" data-lang="markup" data-file="MyMod/MyMod.csproj"></div>
+      <div class="tree">BepInEx\plugins\
+└─ MyMod\
+   ├─ MyMod.dll
+   └─ <b>sprites\</b>
+      ├─ <b>pizza.png</b>
+      └─ <b>lemonade.png</b></div>
+
+      <h3><span data-l="tr">2. Yemeği kaydet</span><span data-l="en">2. Register the dish</span></h3>
+      <p data-l="tr">Pluginin <code class="i">Awake</code> metodunda bir <code class="i">CustomFood</code> oluştur ve <code class="i">Foods.Register</code>'a ver. Sadece kimlik, isim ve sprite zorunlu; geri kalan her şeyin varsayılan değeri var.</p>
+      <p data-l="en">In your plugin's <code class="i">Awake</code>, create a <code class="i">CustomFood</code> and pass it to <code class="i">Foods.Register</code>. Only the id, name and sprite are required; everything else has a default.</p>
+      <div class="code" data-src="food-basic" data-lang="csharp" data-file="MyMod/MyMod.cs"></div>
+      <p data-l="tr">Oyun açılınca LogOutput.log'da şunu görmelisin:</p>
+      <p data-l="en">When the game starts, LogOutput.log should show:</p>
+      <div class="code" data-src="food-log" data-lang="none" data-file="BepInEx\LogOutput.log"></div>
+
+      <h3><span data-l="tr">CustomFood alanları</span><span data-l="en">CustomFood fields</span></h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th><span data-l="tr">Alan</span><span data-l="en">Field</span></th><th><span data-l="tr">Varsayılan</span><span data-l="en">Default</span></th><th><span data-l="tr">Açıklama</span><span data-l="en">Description</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>Id</code></td><td>—</td><td><span data-l="tr">Benzersiz kimlik, ör. <code>"pizza"</code>. Oyundaki bir yemekle aynı olamaz. Constructor'da verilir.</span><span data-l="en">Unique id, e.g. <code>"pizza"</code>. Can't match one of the game's dishes. Set in the constructor.</span></td></tr>
+            <tr><td><code>Name</code></td><td>—</td><td><span data-l="tr">İngilizce isim. <code>Names</code> içinde olmayan her dilde bu görünür.</span><span data-l="en">English name. Shown in every language missing from <code>Names</code>.</span></td></tr>
+            <tr><td><code>Names</code></td><td><span data-l="tr">boş</span><span data-l="en">empty</span></td><td><span data-l="tr">Dile göre isimler: <code>Names = { ["tr"] = "Limonata" }</code>.</span><span data-l="en">Names per language: <code>Names = { ["tr"] = "Limonata" }</code>.</span></td></tr>
+            <tr><td><code>SpritePath</code></td><td>—</td><td><span data-l="tr">PNG yolu. Göreli yollar modunun DLL klasöründen aranır.</span><span data-l="en">PNG path. Relative paths start at your mod's DLL folder.</span></td></tr>
+            <tr><td><code>SpriteBytes</code> / <code>Sprite</code></td><td>null</td><td><span data-l="tr">Dosya yerine PNG baytları ya da hazır bir Unity <code>Sprite</code>.</span><span data-l="en">PNG bytes or a ready Unity <code>Sprite</code> instead of a file.</span></td></tr>
+            <tr><td><code>SpriteScale</code></td><td><code>1</code></td><td><span data-l="tr">Oyunun yemeklerine göre boyut çarpanı.</span><span data-l="en">Size multiplier compared to the game's dishes.</span></td></tr>
+            <tr><td><code>Price</code></td><td><code>100</code></td><td><span data-l="tr">Taban fiyat (altın).</span><span data-l="en">Base price in gold.</span></td></tr>
+            <tr><td><code>CookTime</code></td><td><code>8</code></td><td><span data-l="tr">Mutfağın pişirme süresi (sn).</span><span data-l="en">Kitchen cooking time (s).</span></td></tr>
+            <tr><td><code>EatTime</code></td><td><code>10</code></td><td><span data-l="tr">Müşterinin yeme süresi (sn).</span><span data-l="en">Time the customer spends eating (s).</span></td></tr>
+            <tr><td><code>Kind</code></td><td><code>MainDish</code></td><td><span data-l="tr">Ana yemek, tatlı ya da içecek.</span><span data-l="en">Main dish, sweet or beverage.</span></td></tr>
+            <tr><td><code>MainIngredient</code></td><td><code>Grains</code></td><td><span data-l="tr">Ana malzeme.</span><span data-l="en">Main ingredient.</span></td></tr>
+            <tr><td><code>SecondIngredient</code></td><td>null</td><td><span data-l="tr">İsteğe bağlı ikinci malzeme.</span><span data-l="en">Optional second ingredient.</span></td></tr>
+            <tr><td><code>Tags</code></td><td><code>None</code></td><td><span data-l="tr">Servis etiketleri, birleştirilebilir: <code>DishTags.Hot | DishTags.Heavy</code>.</span><span data-l="en">Serving tags, combinable: <code>DishTags.Hot | DishTags.Heavy</code>.</span></td></tr>
+            <tr><td><code>ServedHot</code></td><td><code>false</code></td><td><span data-l="tr">İçecekler için: sıcak servis (çay, kahve), ana yemek gibi soğur.</span><span data-l="en">For beverages: served hot (tea, coffee), goes cold like a main dish.</span></td></tr>
+            <tr><td><code>Popularity</code></td><td><code>1</code></td><td><span data-l="tr">Seçilme şansı çarpanı. <code>2</code> = iki kat sık, <code>0</code> = müşteri kendi başına hiç seçmez.</span><span data-l="en">Order chance multiplier. <code>2</code> = twice as often, <code>0</code> = never picked on their own.</span></td></tr>
+            <tr><td><code>MapId</code></td><td><span data-l="tr">boş</span><span data-l="en">empty</span></td><td><span data-l="tr">Sadece bu haritada sun. Boş = her harita.</span><span data-l="en">Only offer it on this map. Empty = every map.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3><span data-l="tr">Tür, malzeme ve etiketler</span><span data-l="en">Kinds, ingredients and tags</span></h3>
+      <div class="compare">
+        <div>
+          <h4>FoodKind</h4>
+          <p><code class="i">MainDish</code> · <code class="i">Sweet</code> · <code class="i">Beverage</code></p>
+        </div>
+        <div>
+          <h4>Ingredient</h4>
+          <p><code class="i">Meat</code> · <code class="i">Poultry</code> · <code class="i">Seafood</code> · <code class="i">Flora</code> · <code class="i">Dairy</code> · <code class="i">Grains</code> · <code class="i">Nuts</code></p>
+        </div>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>DishTags</th><th><span data-l="tr">Oyundaki etkisi</span><span data-l="en">Effect in the game</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>Hot</code></td><td><span data-l="tr">Taşınırken soğur; hızlı servis et.</span><span data-l="en">Goes cold while carried; serve it fast.</span></td></tr>
+            <tr><td><code>Fresh</code></td><td><span data-l="tr">Taze servis edilince bonus daha büyük.</span><span data-l="en">Bigger bonus when served fresh.</span></td></tr>
+            <tr><td><code>Heavy</code></td><td><span data-l="tr">Doyurucu yemek.</span><span data-l="en">A filling dish.</span></td></tr>
+            <tr><td><code>Spicy</code></td><td><span data-l="tr">Müşteri ardından içecek isteyebilir.</span><span data-l="en">The customer may order a drink afterwards.</span></td></tr>
+            <tr><td><code>Alcohol</code></td><td><span data-l="tr">Çok içen müşteri kavga çıkarabilir.</span><span data-l="en">Customers who drink a lot may start a fight.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <p data-l="tr"><b>Müşteri neyi sipariş eder?</b> Her ırkın sevdiği, sevmediği ve alerjik olduğu malzeme/tür listesi var. Oyun menüdeki her yemeğe bir ağırlık verir: sevilen her etiket ağırlığı artırır, sevilmeyen her etiket azaltır, alerji sıfırlar. Sonra rastgele seçer. plsApi bu ağırlığı <code class="i">Popularity</code> ile çarpar. Yani malzeme seçimin, yemeğini kimin sipariş edeceğini belirler.</p>
+        <p data-l="en"><b>What do customers order?</b> Each race has lists of liked, disliked and allergen ingredients/kinds. The game gives every dish on the menu a weight: each liked tag raises it, each disliked tag lowers it, an allergy sets it to zero. Then it picks at random. plsApi multiplies that weight by <code class="i">Popularity</code>. So your ingredient choice decides who orders your dish.</p>
+      </div>
+
+      <h3><span data-l="tr">Olaylar: sipariş ve servis</span><span data-l="en">Events: ordered and served</span></h3>
+      <div class="code" data-src="food-events" data-lang="csharp" data-file="C#"></div>
+
+      <h3><span data-l="tr">Test etmek</span><span data-l="en">Testing</span></h3>
+      <p data-l="tr">Müşterinin yemeğini seçmesini beklemek uzun sürebilir. <code class="i">Foods.ForceNextOrder</code> ile sıradaki müşteriye (alerjisi yoksa) istediğin yemeği sipariş ettirebilirsin; oyunun kendi yemek kimlikleriyle de çalışır.</p>
+      <p data-l="en">Waiting for a customer to pick your dish can take a while. <code class="i">Foods.ForceNextOrder</code> makes the next customer (if not allergic) order the dish you want; it works with the game's own dish ids too.</p>
+      <div class="code" data-src="food-test" data-lang="csharp" data-file="C#"></div>
+
+      <h3><span data-l="tr">Tam örnek: PizzaMod</span><span data-l="en">Full example: PizzaMod</span></h3>
+      <div class="code" data-src="food-full" data-lang="csharp" data-file="PizzaMod/PizzaMod.cs"></div>
+
+      <div class="note warn">
+        <p data-l="tr"><b>Dikkat:</b> Sprite oyun açılırken yüklenir. Yol yanlışsa ya da dosya bozuksa yemek eklenmez ve LogOutput.log'a <code class="i">plsApi.Foods</code> kaynağıyla hata yazılır. Aynı <code class="i">Id</code>'yi iki kez kaydetmek hata fırlatır; oyundaki bir yemeğin kimliğini kullanırsan yemek atlanır.</p>
+        <p data-l="en"><b>Heads up:</b> the sprite is loaded when the game starts. If the path is wrong or the file is broken, the dish is not added and an error tagged <code class="i">plsApi.Foods</code> is written to LogOutput.log. Registering the same <code class="i">Id</code> twice throws; using the id of one of the game's dishes skips your dish.</p>
+      </div>
+      <p data-l="tr">Dil kodları: <code class="i">en</code>, <code class="i">tr</code>, <code class="i">de</code>, <code class="i">fr</code>, <code class="i">es</code>, <code class="i">es-419</code>, <code class="i">pt-BR</code>, <code class="i">pt-PT</code>, <code class="i">pl</code>, <code class="i">ru</code>, <code class="i">zh-Hans</code>, <code class="i">zh-Hant</code>, <code class="i">ja</code>, <code class="i">ko</code>. Kayıt dosyası yemek kimliği saklamadığı için modu sonradan kaldırmak kayıtları bozmaz.</p>
+      <p data-l="en">Language codes: <code class="i">en</code>, <code class="i">tr</code>, <code class="i">de</code>, <code class="i">fr</code>, <code class="i">es</code>, <code class="i">es-419</code>, <code class="i">pt-BR</code>, <code class="i">pt-PT</code>, <code class="i">pl</code>, <code class="i">ru</code>, <code class="i">zh-Hans</code>, <code class="i">zh-Hant</code>, <code class="i">ja</code>, <code class="i">ko</code>. The save file doesn't store dish ids, so removing a food mod later doesn't break saves.</p>
+    </section>
+
+    <!-- customers -->
+    <section id="customers">
+      <h2><span class="n">08</span><span data-l="tr">Özel müşteriler</span><span data-l="en">Custom customers</span></h2>
+      <p data-l="tr"><code class="i">Customers.Register</code> restorana yeni bir müşteri türü ekler (oyunun dilinde yeni bir "ırk"). Bu müşteriler sıraya girer, oturur, sipariş verir, yer ve öder; tıpkı oyunun kendi müşterileri gibi. Neyi sipariş edecekleri sevdikleri, sevmedikleri ve alerjileri olan malzemelere göre belirlenir. Pencere ya da şarkıcı yanında oturmayı ne kadar istediklerini haritaya ve yıldıza göre şanslarıyla birlikte ayarlayabilirsin.</p>
+      <p data-l="en"><code class="i">Customers.Register</code> adds a new kind of customer to the restaurant (a new "race" in the game's terms). They queue, sit, order, eat and pay just like the game's own customers. What they order follows the ingredients they like, dislike and are allergic to. How much they want a window seat or a seat by the singer can be set per map and star level, each with its own chance.</p>
+
+      <h3><span data-l="tr">İki çizim yolu</span><span data-l="en">Two ways to draw them</span></h3>
+      <div class="compare">
+        <div>
+          <h4><span data-l="tr">Tek sprite</span><span data-l="en">Single sprite</span></h4>
+          <p data-l="tr">Karakterin tamamı tek bir PNG'de. Animasyon tüm resmi sallayarak, yaylandırarak yapılır. En hızlı yol.</p>
+          <p data-l="en">The whole character in one PNG. Animation bobs and sways the whole picture. The quickest way.</p>
+        </div>
+        <div>
+          <h4><span data-l="tr">Kollar ayrı</span><span data-l="en">Separate arms</span></h4>
+          <p data-l="tr">Kolsuz gövde + kol PNG'leri. Yürürken ve yemek yerken kollar ayrıca sallanır. Omuz noktalarını piksel olarak verirsin.</p>
+          <p data-l="en">A body without arms + arm PNGs. The arms swing on their own while walking and eating. You give the shoulder points in pixels.</p>
+        </div>
+      </div>
+      <ul data-l="tr">
+        <li>Şeffaf PNG, karakter <b>sağa bakıyor</b> ve <b>ayakları resmin alt kenarına değiyor</b> olsun. Çözünürlük önemli değil: plsApi karakteri <code class="i">AnimationsFrom</code> ırkıyla aynı boya ölçekler (<code class="i">Scale</code> ile değiştirebilirsin).</li>
+        <li>Kol: aşağı sarkan halde çiz, <b>omuz resmin üst ortasında</b> olsun, gövdeyle aynı piksel ölçeğinde.</li>
+        <li>Omuz koordinatları gövde resminde <b>sol üst köşeden</b> piksel olarak ölçülür. Vermezsen <code class="i">AnimationsFrom</code> ırkının oranları kullanılır.</li>
+        <li>Animasyonlar (yürüme, oturma, yeme) <code class="i">AnimationsFrom</code> ile seçtiğin oyun ırkından ödünç alınır.</li>
+      </ul>
+      <ul data-l="en">
+        <li>A transparent PNG with the character <b>facing right</b> and <b>feet touching the bottom edge</b>. Resolution doesn't matter: plsApi scales the character to the height of the <code class="i">AnimationsFrom</code> race (change it with <code class="i">Scale</code>).</li>
+        <li>Arms: draw them hanging down with the <b>shoulder at the top centre</b> of the image, at the same pixel scale as the body.</li>
+        <li>Shoulder coordinates are pixels in the body image, measured <b>from the top-left corner</b>. Leave them out to use the proportions of the <code class="i">AnimationsFrom</code> race.</li>
+        <li>Animations (walk, sit, eat) are borrowed from the game race you pick with <code class="i">AnimationsFrom</code>.</li>
+      </ul>
+      <figure class="shoulders" aria-label="Shoulder coordinates on a body sprite">
+        <svg viewBox="0 0 420 250" role="img">
+          <rect x="150" y="20" width="110" height="210" rx="10" class="sh-body"/>
+          <rect x="175" y="40" width="60" height="53" rx="10" class="sh-part"/>
+          <rect x="181" y="170" width="19" height="56" rx="5" class="sh-part"/>
+          <rect x="210" y="170" width="19" height="56" rx="5" class="sh-part"/>
+          <rect x="170" y="99" width="70" height="77" rx="10" class="sh-part"/>
+          <line x1="150" y1="20" x2="150" y2="12" class="sh-axis"/>
+          <path d="M150 12 H 270" class="sh-axis" marker-end="url(#ar)"/>
+          <path d="M142 20 V 240" class="sh-axis" marker-end="url(#ar)"/>
+          <text x="276" y="16" class="sh-t">x</text>
+          <text x="128" y="246" class="sh-t">y</text>
+          <text x="118" y="24" class="sh-t">(0,0)</text>
+          <line x1="142" y1="110" x2="174" y2="110" class="sh-guide"/>
+          <line x1="174" y1="12" x2="174" y2="110" class="sh-guide"/>
+          <circle cx="174" cy="110" r="6" class="sh-dot"/>
+          <circle cx="236" cy="110" r="6" class="sh-dot"/>
+          <text x="20" y="106" class="sh-t">LeftShoulder</text>
+          <text x="20" y="124" class="sh-s">(48, 180)</text>
+          <text x="256" y="106" class="sh-t">RightShoulder</text>
+          <text x="256" y="124" class="sh-s">(172, 180)</text>
+          <text x="268" y="225" class="sh-s">robot_body.png 220×420</text>
+          <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" class="sh-arrow"/></marker></defs>
+        </svg>
+      </figure>
+
+      <h3><span data-l="tr">Tek sprite'lık müşteri</span><span data-l="en">Single-sprite customer</span></h3>
+      <div class="code" data-src="cust-single" data-lang="csharp" data-file="C#"></div>
+      <h3><span data-l="tr">Kolları ayrı müşteri</span><span data-l="en">Customer with separate arms</span></h3>
+      <div class="code" data-src="cust-arms" data-lang="csharp" data-file="C#"></div>
+      <p data-l="tr">Oyun açılınca LogOutput.log'da oyunun ırk ve harita kimlikleri de yazılır; <code class="i">AnimationsFrom</code> ve <code class="i">MapId</code> için bunları kullan:</p>
+      <p data-l="en">When the game starts, LogOutput.log also lists the game's race and map ids; use them for <code class="i">AnimationsFrom</code> and <code class="i">MapId</code>:</p>
+      <div class="code" data-src="cust-log" data-lang="none" data-file="BepInEx\LogOutput.log"></div>
+
+      <h3><span data-l="tr">Oturma tercihleri ve şans</span><span data-l="en">Seat preferences and chance</span></h3>
+      <p data-l="tr">Her <code class="i">SeatRule</code> "bu müşteri <b>%Chance</b> ihtimalle <b>Spot</b>'u <b>Feeling</b>" demektir. İstersen sadece bir haritada (<code class="i">MapId</code>) ve bir yıldız aralığında (<code class="i">MinStar</code>/<code class="i">MaxStar</code>) geçerli olur. Müşteri gelince kurallar sırayla denenir; zarı tutan <b>ilk</b> kural kazanır. Hiçbiri tutmazsa tercihi olmaz (<code class="i">SeatRulesReplaceGame = false</code> yaparsan oyunun kendi rastgele tercihi kalır).</p>
+      <p data-l="en">Each <code class="i">SeatRule</code> means "with <b>Chance</b> probability this customer <b>Feeling</b> the <b>Spot</b>". It can be limited to one map (<code class="i">MapId</code>) and a star range (<code class="i">MinStar</code>/<code class="i">MaxStar</code>). When the customer arrives, the rules are tried in order and the <b>first</b> one whose roll succeeds wins. If none does, they have no preference (set <code class="i">SeatRulesReplaceGame = false</code> to keep the game's own random preference instead).</p>
+      <div class="code" data-src="cust-seats" data-lang="csharp" data-file="C#"></div>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th><span data-l="tr">Değer</span><span data-l="en">Value</span></th><th><span data-l="tr">Anlamı</span><span data-l="en">Meaning</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>SeatSpot.Window</code></td><td><span data-l="tr">Pencere kenarı koltuk.</span><span data-l="en">A seat by a window.</span></td></tr>
+            <tr><td><code>SeatSpot.Singer</code></td><td><span data-l="tr">Sahne / şarkıcı yanı. Sadece sahnesi açık haritalarda denenir.</span><span data-l="en">Next to the stage / singer. Only tried on maps where the stage is live.</span></td></tr>
+            <tr><td><code>SeatFeeling.Loves</code> / <code>Likes</code></td><td><span data-l="tr">Orayı ister; oturtursan mutluluğu (çok / biraz) artar.</span><span data-l="en">Wants it; seating them there raises happiness (a lot / a little).</span></td></tr>
+            <tr><td><code>SeatFeeling.Dislikes</code> / <code>Hates</code></td><td><span data-l="tr">Orayı istemez; oturtursan mutluluğu (biraz / çok) düşer.</span><span data-l="en">Doesn't want it; seating them there lowers happiness (a little / a lot).</span></td></tr>
+            <tr><td><code>Chance</code></td><td><span data-l="tr">0 ile 1 arası. <code>0.7f</code> = bu müşterilerin %70'i.</span><span data-l="en">0 to 1. <code>0.7f</code> = 70% of these customers.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="note">
+        <p data-l="tr">Oyun kendi kurallarını da uygular: sahnesi kapalı haritada şarkıcı kuralı atlanır, odada uygun koltuk yoksa kural atlanır ve grup halinde gelenlerde oyun bazen grubun liderinin tercihini herkese verir.</p>
+        <p data-l="en">The game still applies its own rules: the singer rule is skipped on maps without a live stage, a rule is skipped when the room has no fitting seat, and for groups the game sometimes gives everyone the group leader's preference.</p>
+      </div>
+
+      <h3><span data-l="tr">Komşular: kiminle anlaşır, kiminle kavga eder</span><span data-l="en">Neighbours: who they get on with, who they fight</span></h3>
+      <p data-l="tr"><code class="i">Neighbors</code> sözlüğüne diğer müşterileri ve bir seviye yaz. Anahtar oyunun ırk adı (<code class="i">"Elf"</code>, <code class="i">"Orc"</code>…) ya da başka bir mod müşterisinin kimliği (<code class="i">"ghost"</code>) olabilir. Etkisi, aynı masaya oturduklarında görülür.</p>
+      <p data-l="en">Put other customers and a level into the <code class="i">Neighbors</code> dictionary. The key can be a game race name (<code class="i">"Elf"</code>, <code class="i">"Orc"</code>…) or another mod customer's id (<code class="i">"ghost"</code>). It takes effect when they sit at the same table.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th><span data-l="tr">Seviye</span><span data-l="en">Level</span></th><th><span data-l="tr">Masada ne olur</span><span data-l="en">What happens at the table</span></th><th><span data-l="tr">Kitapta</span><span data-l="en">In the book</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>0</code> · <code>Neighbor.GetAlong</code></td><td><span data-l="tr">İyi anlaşırlar: mutlulukları artar.</span><span data-l="en">They get along: happiness goes up.</span></td><td><span data-l="tr">kalp</span><span data-l="en">heart</span></td></tr>
+            <tr><td><code>1</code> · <code>Neighbor.Annoyed</code></td><td><span data-l="tr">Hafif öfkelenirler: mutlulukları düşer ama kavga etmezler.</span><span data-l="en">Mildly annoyed: happiness drops, but they never fight.</span></td><td><span data-l="tr">çarpı</span><span data-l="en">cross</span></td></tr>
+            <tr><td><code>2</code> · <code>Neighbor.Fight</code></td><td><span data-l="tr">Her seferinde kavga ederler; kavganın sonunda biri ölür, diğeri ya kalır ya da sinirle çıkar.</span><span data-l="en">They fight every time; at the end one of them dies, the other either stays or storms out.</span></td><td><span data-l="tr">kırık kalp</span><span data-l="en">broken heart</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code" data-src="cust-neighbors" data-lang="csharp" data-file="C#"></div>
+      <div class="note">
+        <p data-l="tr"><code class="i">NeighborsMutual = true</code> (varsayılan) ise karşı taraf da aynı şekilde hisseder; o taraf kendi ilişkisini yazmışsa onunki geçerlidir. Aynı grupla gelenler birbiriyle kavga etmez ve kavga edecek seviyedekiler aynı grupla gelmez. Oyunun kendi kuralıyla olumsuz komşular %25 şansla kavga ederdi; mod ilişkilerinde bu şans yerine yukarıdaki seviyeler geçerlidir.</p>
+        <p data-l="en">With <code class="i">NeighborsMutual = true</code> (the default) the other side feels the same way back; if it wrote its own relation, that one wins. Customers in the same group never fight each other, and customers at fight level never arrive in the same group. The game's own rule makes negative neighbours fight with a 25% chance; for mod relations the levels above decide instead.</p>
+      </div>
+
+      <h3><span data-l="tr">Kitaptaki MOD sekmesi</span><span data-l="en">The MOD tab in the book</span></h3>
+      <p data-l="tr">Oyun içinde karakter defterini (almanak) açınca mavi ırk sekmesinin yanında altın renkli bir <b>MOD</b> sekmesi çıkar. Ona tıklayınca sol sayfada mod müşterilerinin ikonları, sağ sayfada seçilenin adı, açıklaması, kaç kez karşılaşıldığı, komşu tercihleri (kalp / halka / çarpı / kırık kalp sütunlarında) ve alerji / sever / sevmez yemekleri görünür. Bu sayfa modunu kontrol etmen için olduğundan bilgiler keşfedilmeyi beklemeden hepsi gösterilir. 12'den fazla müşteride sayfalar <b>&lt;</b> <b>&gt;</b> ile değişir.</p>
+      <p data-l="en">Open the character book (almanac) in game and a gold <b>MOD</b> tab appears next to the blue species tab. Clicking it shows your mod customers' icons on the left page, and on the right the selected one's name, description, how many times you've met them, neighbour preferences (in the heart / ring / cross / broken-heart columns) and their allergen / like / dislike foods. The page is meant for checking your mod, so everything is shown without waiting to be discovered. With more than 12 customers, <b>&lt;</b> <b>&gt;</b> switch pages.</p>
+
+      <h3><span data-l="tr">Alanlar</span><span data-l="en">Fields</span></h3>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th><span data-l="tr">Alan</span><span data-l="en">Field</span></th><th><span data-l="tr">Varsayılan</span><span data-l="en">Default</span></th><th><span data-l="tr">Açıklama</span><span data-l="en">Description</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>Id</code>, <code>Name</code></td><td>—</td><td><span data-l="tr">Benzersiz kimlik ve İngilizce isim (constructor).</span><span data-l="en">Unique id and English name (constructor).</span></td></tr>
+            <tr><td><code>Names</code>, <code>Description</code>, <code>Descriptions</code></td><td><span data-l="tr">boş</span><span data-l="en">empty</span></td><td><span data-l="tr">Dile göre isimler ve kısa açıklama.</span><span data-l="en">Names per language and a short description.</span></td></tr>
+            <tr><td><code>SpritePath</code> / <code>SpriteBytes</code></td><td>—</td><td><span data-l="tr">Gövde (tek sprite modunda tüm karakter).</span><span data-l="en">Body (the whole character in single-sprite mode).</span></td></tr>
+            <tr><td><code>ArmSpritePath</code></td><td>null</td><td><span data-l="tr">İki kol için aynı resim.</span><span data-l="en">One image for both arms.</span></td></tr>
+            <tr><td><code>LeftArmSpritePath</code>, <code>RightArmSpritePath</code></td><td>null</td><td><span data-l="tr">Kollar farklıysa ayrı ayrı.</span><span data-l="en">Separate images when the arms differ.</span></td></tr>
+            <tr><td><code>LeftShoulder</code>, <code>RightShoulder</code></td><td><span data-l="tr">otomatik</span><span data-l="en">automatic</span></td><td><span data-l="tr">Gövde resminde omuz pikseli (sol üstten).</span><span data-l="en">Shoulder pixel in the body image (from the top-left).</span></td></tr>
+            <tr><td><code>SitSpritePath</code></td><td>null</td><td><span data-l="tr">Oturan hali (kollar dahil). Yoksa ayakta duran resim sandalyede kullanılır.</span><span data-l="en">Sitting pose (arms included). Without it the standing image is used on chairs.</span></td></tr>
+            <tr><td><code>DeadSpritePath</code></td><td>null</td><td><span data-l="tr">Yere yığıldığında gösterilen resim.</span><span data-l="en">Shown when the customer collapses.</span></td></tr>
+            <tr><td><code>IconPath</code></td><td><span data-l="tr">gövde</span><span data-l="en">body</span></td><td><span data-l="tr">Portre / ikon.</span><span data-l="en">Portrait / icon.</span></td></tr>
+            <tr><td><code>Scale</code></td><td><code>1</code></td><td><span data-l="tr">Boy çarpanı.</span><span data-l="en">Height multiplier.</span></td></tr>
+            <tr><td><code>AnimationsFrom</code></td><td><code>"Elf"</code></td><td><span data-l="tr">Animasyon ve vücut yerleşimi ödünç alınan oyun ırkı.</span><span data-l="en">Game race whose animations and body layout are borrowed.</span></td></tr>
+            <tr><td><code>SpawnWeight</code></td><td><code>1</code></td><td><span data-l="tr">Gelme sıklığı; <code>1</code> = oyunun bir ırkı kadar, <code>3</code> = üç katı, <code>0</code> = sadece <code>ForceNextCustomer</code> ile.</span><span data-l="en">How often they come; <code>1</code> = like one game race, <code>3</code> = three times as often, <code>0</code> = only via <code>ForceNextCustomer</code>.</span></td></tr>
+            <tr><td><code>FirstMapId</code>, <code>FirstStar</code></td><td><span data-l="tr">baştan</span><span data-l="en">from start</span></td><td><span data-l="tr">Hangi haritada, kaç yıldızdan itibaren gelmeye başlar.</span><span data-l="en">Which map and star level they start appearing from.</span></td></tr>
+            <tr><td><code>OnBeachMaps</code></td><td><code>false</code></td><td><span data-l="tr">Plaj / mayo haritalarına da gelsin mi (vücut kısmen suda görünür).</span><span data-l="en">Also come to beach / swimwear maps (body partly under water).</span></td></tr>
+            <tr><td><code>Likes</code>, <code>Dislikes</code>, <code>Allergies</code></td><td><span data-l="tr">boş</span><span data-l="en">empty</span></td><td><span data-l="tr">Malzeme ve türler: <code>{ Ingredient.Nuts, FoodKind.Sweet }</code>. Alerji olan yemek servis edilirse ölümcüldür.</span><span data-l="en">Ingredients and kinds: <code>{ Ingredient.Nuts, FoodKind.Sweet }</code>. Serving an allergen is fatal.</span></td></tr>
+            <tr><td><code>Neighbors</code></td><td><span data-l="tr">boş</span><span data-l="en">empty</span></td><td><span data-l="tr">Komşu seviyeleri: <code>{ ["Elf"] = 0, ["Orc"] = 2 }</code>.</span><span data-l="en">Neighbour levels: <code>{ ["Elf"] = 0, ["Orc"] = 2 }</code>.</span></td></tr>
+            <tr><td><code>NeighborsMutual</code></td><td><code>true</code></td><td><span data-l="tr">Karşı taraf da aynı şekilde hissetsin mi.</span><span data-l="en">Whether the other side feels the same way back.</span></td></tr>
+            <tr><td><code>PluralName</code>, <code>PluralNames</code></td><td><span data-l="tr">Name + "s"</span><span data-l="en">Name + "s"</span></td><td><span data-l="tr">Oyunun komşu ipuçlarında kullanılan çoğul isim ("Robotlar Elfleri sever").</span><span data-l="en">Plural used in the game's neighbour hints ("Robots love Elves").</span></td></tr>
+            <tr><td><code>SeatRules</code>, <code>SeatRulesReplaceGame</code></td><td><span data-l="tr">boş</span><span data-l="en">empty</span>, <code>true</code></td><td><span data-l="tr">Yukarıdaki oturma kuralları.</span><span data-l="en">The seat rules above.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3><span data-l="tr">Test ve olaylar</span><span data-l="en">Testing and events</span></h3>
+      <div class="code" data-src="cust-test" data-lang="csharp" data-file="C#"></div>
+
+      <h3><span data-l="tr">Tam örnek: CustomerMod</span><span data-l="en">Full example: CustomerMod</span></h3>
+      <div class="code" data-src="cust-full" data-lang="csharp" data-file="CustomerMod/CustomerMod.cs"></div>
+
+      <div class="note warn">
+        <p data-l="tr"><b>Bilmen gerekenler:</b> Özel müşteriler oyunun kendi ırk sayfasında değil, MOD sekmesinde listelenir ve onlar için "yeni ırk" tanıtım kartı çıkmaz. Yüz ifadeleri (mutlu/kızgın) çizilmez; resmin kendisi görünür. Kayıt dosyası sadece karşılaşma sayılarını numarayla tutar ve oyun tanımadığı numaraları yok sayar, bu yüzden modu kaldırmak kayıtları bozmaz.</p>
+        <p data-l="en"><b>Good to know:</b> custom customers are listed on the MOD tab rather than the game's own species page, and no "new race" intro card is shown for them. Facial expressions (happy/angry) aren't drawn; the picture itself is shown. The save only stores encounter counts by number and the game ignores numbers it doesn't know, so removing the mod doesn't break saves.</p>
+      </div>
+      <div class="note">
+        <p data-l="tr"><b>Jenerik:</b> plsApi yüklüyken oyunun Jenerik ekranında, oyunun kendi yazı tipi ve renkleriyle bir <b>"Mod API By W0RKY"</b> kartı görünür.</p>
+        <p data-l="en"><b>Credits:</b> while plsApi is installed, the game's Credits screen shows a <b>"Mod API By W0RKY"</b> card in the game's own font and colours.</p>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section id="example">
+      <h2><span class="n">09</span><span data-l="tr">Tam örnek: F8 sayacı</span><span data-l="en">Full example: F8 counter</span></h2>
+      <p data-l="tr">Oyun açılınca selam verir, <kbd>F8</kbd>'e her basışta ekrana ve log'a yazar. Check Please! Unity'nin <b>yeni Input System</b> paketini kullanır, bu yüzden klavye için <code class="i">UnityEngine.InputSystem.Keyboard</code> kullanıyoruz.</p>
+      <p data-l="en">Says hello when the game starts and writes to the screen and the log each time you press <kbd>F8</kbd>. Check Please! uses Unity's <b>new Input System</b> package, so we read the keyboard through <code class="i">UnityEngine.InputSystem.Keyboard</code>.</p>
+      <p data-l="tr">Önce <code class="i">.csproj</code> dosyasındaki <code class="i">&lt;ItemGroup&gt;</code> içine bu referansı ekle:</p>
+      <p data-l="en">First add this reference inside the <code class="i">&lt;ItemGroup&gt;</code> of your <code class="i">.csproj</code>:</p>
+      <div class="code" data-src="inputref" data-lang="markup" data-file="MyMod/MyMod.csproj"></div>
+      <div class="code" data-src="full" data-lang="csharp" data-file="HelloMod/HelloMod.cs"></div>
+    </section>
+
+    <!-- 8 -->
+    <section id="build">
+      <h2><span class="n">10</span><span data-l="tr">Derle ve çalıştır</span><span data-l="en">Build and run</span></h2>
+      <ol class="steps">
+        <li data-l="tr">Mod klasöründe bir terminal aç ve derle:</li>
+        <li data-l="en">Open a terminal in your mod folder and build:</li>
+      </ol>
+      <div class="code" data-src="build" data-lang="none" data-file="Terminal"></div>
+      <ol class="steps" start="2" style="counter-reset: s 1">
+        <li data-l="tr">Proje dosyasındaki <code class="i">CopyToPlugins</code> adımı <code class="i">MyMod.dll</code> dosyasını otomatik olarak <code class="i">BepInEx\plugins\MyMod\</code> içine kopyalar. Oyun açıkken derlersen kopyalama başarısız olur; önce oyunu kapat.</li>
+        <li data-l="en">The <code class="i">CopyToPlugins</code> step in the project file copies <code class="i">MyMod.dll</code> into <code class="i">BepInEx\plugins\MyMod\</code> for you. Building while the game is open makes the copy fail, so close the game first.</li>
+        <li data-l="tr">Oyunu Steam'den başlat. Sol üstte mesajını görmelisin; <code class="i">print_log</code> satırları <code class="i">LogOutput.log</code> içinde olur.</li>
+        <li data-l="en">Start the game from Steam. Your message shows in the top-left; <code class="i">print_log</code> lines are in <code class="i">LogOutput.log</code>.</li>
+      </ol>
+    </section>
+
+    <!-- 9 -->
+    <section id="config">
+      <h2><span class="n">11</span><span data-l="tr">Ayarlar</span><span data-l="en">Settings</span></h2>
+      <p data-l="tr">plsApi ilk çalıştığında <code class="i">BepInEx\config\plsApi.cfg</code> dosyasını oluşturur. Bu ayarlar tüm modların <code class="i">print_game</code> mesajlarını etkiler; değiştirdikten sonra oyunu yeniden başlat.</p>
+      <p data-l="en">plsApi creates <code class="i">BepInEx\config\plsApi.cfg</code> on first run. These settings apply to every mod's <code class="i">print_game</code> messages; restart the game after changing them.</p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th><span data-l="tr">Anahtar</span><span data-l="en">Key</span></th><th><span data-l="tr">Varsayılan</span><span data-l="en">Default</span></th><th><span data-l="tr">Açıklama</span><span data-l="en">Description</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>FontSize</code></td><td><code>22</code></td><td><span data-l="tr">1080p'deki yazı boyutu, ekran yüksekliğine göre ölçeklenir.</span><span data-l="en">Font size at 1080p; scales with the screen height.</span></td></tr>
+            <tr><td><code>DefaultDuration</code></td><td><code>5</code></td><td><span data-l="tr">Süre verilmezse mesajın ekranda kaldığı saniye.</span><span data-l="en">Seconds a message stays when no duration is given.</span></td></tr>
+            <tr><td><code>MaxLines</code></td><td><code>12</code></td><td><span data-l="tr">Aynı anda görünen en fazla mesaj sayısı.</span><span data-l="en">Most messages shown at once.</span></td></tr>
+            <tr><td><code>ShowBackground</code></td><td><code>true</code></td><td><span data-l="tr">Her mesajın arkasına yarı saydam koyu kutu çizer.</span><span data-l="en">Draws a translucent dark box behind each message.</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="code" data-src="cfg" data-lang="none" data-file="BepInEx\config\plsApi.cfg"></div>
+    </section>
+
+    <!-- 10 -->
+    <section id="troubleshooting">
+      <h2><span class="n">12</span><span data-l="tr">Sorun giderme</span><span data-l="en">Troubleshooting</span></h2>
+      <div data-l="tr">
+        <h3>BepInPlugin, BaseUnityPlugin, print_game kırmızı çiziliyor</h3>
+        <p>Proje büyük ihtimalle Visual Studio'nun ".NET Framework" şablonuyla açıldı (<code class="i">.csproj</code> içinde <code class="i">TargetFrameworkVersion v3.5</code> ya da <code class="i">Compile Include</code> satırları görürsün). <code class="i">.csproj</code> dosyasının içeriğini 3. adımdaki şablonla değiştir. Projede <code class="i">Properties\AssemblyInfo.cs</code> varsa <code class="i">&lt;PropertyGroup&gt;</code> içine <code class="i">&lt;GenerateAssemblyInfo&gt;false&lt;/GenerateAssemblyInfo&gt;</code> ekle. Sonra Visual Studio'da projeye sağ tıklayıp <b>Projeyi Yeniden Yükle</b> de.</p>
+        <h3>Ekranda hiçbir şey çıkmıyor</h3>
+        <ul>
+          <li>LogOutput.log içinde <code class="i">plsApi v1.3.0 loaded</code> satırı var mı? Yoksa <code class="i">plsApi.dll</code> yanlış klasörde.</li>
+          <li>Modun yüklendi mi? <code class="i">Loading [MyMod 1.0.0]</code> satırını ara.</li>
+          <li>Süreyi çok kısa verdiysen (ör. <code class="i">0.2f</code>) mesaj göz açıp kapayıncaya kadar kaybolur.</li>
+        </ul>
+        <h3>Derleme hatası: CS0012 'MonoBehaviour' ... UnityEngine</h3>
+        <p><code class="i">UnityEngine.dll</code> referansı eksik. 3. adımdaki proje dosyasında hem <code class="i">UnityEngine</code> hem <code class="i">UnityEngine.CoreModule</code> olmalı.</p>
+        <h3>Derleme hatası: plsApi bulunamadı</h3>
+        <p>Proje, plsApi.dll'i <code class="i">BepInEx\plugins\plsApi\</code> içinde arar. Önce 2. adımı yap ya da <code class="i">HintPath</code> yolunu düzelt.</p>
+        <h3>Input.GetKeyDown hata veriyor</h3>
+        <p>Oyun yeni Input System kullanıyor; eski <code class="i">Input</code> sınıfı çalışmayabilir. 9. adımdaki <code class="i">Keyboard.current</code> yöntemini kullan.</p>
+        <h3>Özel yemeğim menüde yok ya da kimse sipariş etmiyor</h3>
+        <ul>
+          <li>LogOutput.log'da <code class="i">plsApi.Foods</code> satırlarına bak: <code class="i">Registered custom food</code> var mı, sprite hatası var mı?</li>
+          <li>Sprite yolu DLL klasörüne göredir: <code class="i">plugins\MyMod\sprites\pizza.png</code> gerçekten orada mı?</li>
+          <li><code class="i">MapId</code> verdiysen yemek sadece o haritada çıkar. <code class="i">Popularity = 0</code> ise müşteri kendi seçmez.</li>
+          <li>Malzemeler o haritadaki ırkların alerjisine denk geliyorsa sipariş edilmez. <kbd>F9</kbd> + <code class="i">ForceNextOrder</code> ile dene.</li>
+        </ul>
+        <h3>Özel müşterim hiç gelmiyor</h3>
+        <ul>
+          <li>LogOutput.log'da <code class="i">plsApi.Customers</code> satırlarına bak: <code class="i">Built customer</code> var mı, sprite hatası var mı?</li>
+          <li><code class="i">FirstMapId</code>/<code class="i">FirstStar</code> verdiysen o haritaya ve yıldıza gelmeden çıkmaz. <code class="i">SpawnWeight = 0</code> ise sadece <code class="i">ForceNextCustomer</code> ile gelir.</li>
+          <li>Plaj haritalarında sadece <code class="i">OnBeachMaps = true</code> olanlar gelir.</li>
+          <li>Hemen görmek için <code class="i">Customers.ForceNextCustomer("id")</code> kullan.</li>
+        </ul>
+        <h3>Müşteri havada ya da yerin içinde duruyor</h3>
+        <p>Resimde ayaklar alt kenara değmiyor demektir. Alttaki boşluğu kırp. Kollar yanlış yerdeyse <code class="i">LeftShoulder</code>/<code class="i">RightShoulder</code> değerlerini resmin sol üst köşesinden ölç.</p>
+        <h3>print_log konsolda görünmüyor</h3>
+        <p>Bu bilerek böyle. Konsolda da görmek istersen BepInEx'in kendi log'unu kullan: <code class="i">Logger.LogInfo("...")</code>.</p>
+      </div>
+      <div data-l="en">
+        <h3>BepInPlugin, BaseUnityPlugin, print_game are underlined in red</h3>
+        <p>The project was most likely made with Visual Studio's ".NET Framework" template (the <code class="i">.csproj</code> has <code class="i">TargetFrameworkVersion v3.5</code> or <code class="i">Compile Include</code> lines). Replace the <code class="i">.csproj</code> contents with the template from step 3. If the project has <code class="i">Properties\AssemblyInfo.cs</code>, add <code class="i">&lt;GenerateAssemblyInfo&gt;false&lt;/GenerateAssemblyInfo&gt;</code> inside the <code class="i">&lt;PropertyGroup&gt;</code>. Then right-click the project in Visual Studio and choose <b>Reload Project</b>.</p>
+        <h3>Nothing shows on screen</h3>
+        <ul>
+          <li>Is there a <code class="i">plsApi v1.3.0 loaded</code> line in LogOutput.log? If not, <code class="i">plsApi.dll</code> is in the wrong folder.</li>
+          <li>Did your mod load? Look for <code class="i">Loading [MyMod 1.0.0]</code>.</li>
+          <li>A very short duration (e.g. <code class="i">0.2f</code>) makes the message disappear almost instantly.</li>
+        </ul>
+        <h3>Build error: CS0012 'MonoBehaviour' ... UnityEngine</h3>
+        <p>The <code class="i">UnityEngine.dll</code> reference is missing. The project file from step 3 needs both <code class="i">UnityEngine</code> and <code class="i">UnityEngine.CoreModule</code>.</p>
+        <h3>Build error: plsApi not found</h3>
+        <p>The project looks for plsApi.dll in <code class="i">BepInEx\plugins\plsApi\</code>. Do step 2 first, or fix the <code class="i">HintPath</code>.</p>
+        <h3>Input.GetKeyDown throws an error</h3>
+        <p>The game uses the new Input System, so the old <code class="i">Input</code> class may not work. Use <code class="i">Keyboard.current</code> as in step 9.</p>
+        <h3>My custom dish isn't on the menu, or nobody orders it</h3>
+        <ul>
+          <li>Check the <code class="i">plsApi.Foods</code> lines in LogOutput.log: is there a <code class="i">Registered custom food</code> line, or a sprite error?</li>
+          <li>The sprite path is relative to your DLL folder: is <code class="i">plugins\MyMod\sprites\pizza.png</code> really there?</li>
+          <li>With a <code class="i">MapId</code> the dish only appears on that map. With <code class="i">Popularity = 0</code> customers never pick it themselves.</li>
+          <li>If the ingredients match the allergies of the races on that map, they won't order it. Try <kbd>F9</kbd> + <code class="i">ForceNextOrder</code>.</li>
+        </ul>
+        <h3>My custom customer never shows up</h3>
+        <ul>
+          <li>Check the <code class="i">plsApi.Customers</code> lines in LogOutput.log: is there a <code class="i">Built customer</code> line, or a sprite error?</li>
+          <li>With <code class="i">FirstMapId</code>/<code class="i">FirstStar</code> they only appear from that map and star level. With <code class="i">SpawnWeight = 0</code> they only come via <code class="i">ForceNextCustomer</code>.</li>
+          <li>On beach maps only customers with <code class="i">OnBeachMaps = true</code> come.</li>
+          <li>Use <code class="i">Customers.ForceNextCustomer("id")</code> to see them right away.</li>
+        </ul>
+        <h3>The customer floats or sinks into the floor</h3>
+        <p>The feet don't touch the bottom edge of the image. Crop the empty space below them. If the arms are in the wrong place, measure <code class="i">LeftShoulder</code>/<code class="i">RightShoulder</code> from the top-left corner of the image.</p>
+        <h3>print_log doesn't show in the console</h3>
+        <p>That is on purpose. If you also want console output, use BepInEx's own logger: <code class="i">Logger.LogInfo("...")</code>.</p>
+      </div>
+    </section>
+
+    <!-- 11 -->
+    <section id="reference">
+      <h2><span class="n">13</span><span data-l="tr">API özeti</span><span data-l="en">API reference</span></h2>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th><span data-l="tr">Üye</span><span data-l="en">Member</span></th><th><span data-l="tr">Açıklama</span><span data-l="en">Description</span></th></tr></thead>
+          <tbody>
+            <tr><td><code>namespace plsApi</code></td><td><span data-l="tr">Tüm API bu isim alanında.</span><span data-l="en">Everything lives in this namespace.</span></td></tr>
+            <tr><td><code>static class Pls</code></td><td><span data-l="tr"><code>using static plsApi.Pls;</code> ile içe aktar.</span><span data-l="en">Import with <code>using static plsApi.Pls;</code>.</span></td></tr>
+            <tr><td><code>Pls.print_game(...)</code></td><td><span data-l="tr">Sol üste yazı. 4 farklı kullanım, bkz. bölüm 5.</span><span data-l="en">Top-left text. 4 overloads, see section 5.</span></td></tr>
+            <tr><td><code>Pls.print_log(object)</code></td><td><span data-l="tr">Sadece LogOutput.log'a, mod adıyla.</span><span data-l="en">Only to LogOutput.log, tagged with your mod name.</span></td></tr>
+            <tr><td><code>Foods.Register(CustomFood)</code></td><td><span data-l="tr">Menüye yemek ekler, aynı nesneyi geri döndürür. Bkz. bölüm 7.</span><span data-l="en">Adds a dish to the menu and returns the same object. See section 7.</span></td></tr>
+            <tr><td><code>Foods.Get(string id)</code></td><td><span data-l="tr">Kayıtlı özel yemeği bulur, yoksa <code>null</code>.</span><span data-l="en">Finds a registered custom dish, or <code>null</code>.</span></td></tr>
+            <tr><td><code>Foods.All</code></td><td><span data-l="tr">Modların kaydettiği tüm yemekler.</span><span data-l="en">Every dish registered by mods.</span></td></tr>
+            <tr><td><code>Foods.ForceNextOrder(string id)</code></td><td><span data-l="tr">Sıradaki müşteri bu yemeği sipariş eder.</span><span data-l="en">The next customer orders this dish.</span></td></tr>
+            <tr><td><code>Foods.GameFoodIds()</code></td><td><span data-l="tr">Oyundaki tüm yemek kimlikleri (özel olanlar dahil).</span><span data-l="en">Every dish id in the game, custom ones included.</span></td></tr>
+            <tr><td><code>CustomFood.Ordered</code> / <code>Served</code></td><td><span data-l="tr">Sipariş ve servis olayları.</span><span data-l="en">Order and serve events.</span></td></tr>
+            <tr><td><code>Customers.Register(CustomCustomer)</code></td><td><span data-l="tr">Yeni müşteri türü ekler. Bkz. bölüm 8.</span><span data-l="en">Adds a new customer type. See section 8.</span></td></tr>
+            <tr><td><code>Customers.Get(id)</code>, <code>Customers.All</code></td><td><span data-l="tr">Kayıtlı müşterileri bulur / listeler.</span><span data-l="en">Finds / lists registered customers.</span></td></tr>
+            <tr><td><code>Customers.ForceNextCustomer(id)</code></td><td><span data-l="tr">Sıradaki gelen müşteri bu olur.</span><span data-l="en">The next customer to walk in is this one.</span></td></tr>
+            <tr><td><code>Customers.GameRaceNames()</code>, <code>GameMapIds()</code></td><td><span data-l="tr">Oyunun ırk adları ve harita kimlikleri.</span><span data-l="en">The game's race names and map ids.</span></td></tr>
+            <tr><td><code>CustomCustomer.Spawned</code></td><td><span data-l="tr">Müşteri restorana girince.</span><span data-l="en">When the customer walks in.</span></td></tr>
+            <tr><td><code>CustomCustomer.Neighbors</code>, <code>Neighbor.*</code></td><td><span data-l="tr">Komşu seviyeleri: 0 iyi anlaşır, 1 hafif öfkeli, 2 kavga (biri ölür).</span><span data-l="en">Neighbour levels: 0 get along, 1 mildly annoyed, 2 fight (one dies).</span></td></tr>
+            <tr><td><code>SeatRule(SeatSpot, SeatFeeling, chance)</code></td><td><span data-l="tr">Şanslı oturma tercihi; <code>MapId</code>, <code>MinStar</code>, <code>MaxStar</code>.</span><span data-l="en">Seat preference with a chance; <code>MapId</code>, <code>MinStar</code>, <code>MaxStar</code>.</span></td></tr>
+            <tr><td><code>PlsApiPlugin.GUID</code></td><td><span data-l="tr"><code>"plsApi"</code>, <code>[BepInDependency]</code> için.</span><span data-l="en"><code>"plsApi"</code>, for <code>[BepInDependency]</code>.</span></td></tr>
+            <tr><td><code>PlsApiPlugin.VERSION</code></td><td><code>"1.3.0"</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p data-l="tr">İki fonksiyon da her thread'den güvenle çağrılabilir.</p>
+      <p data-l="en">Both functions are safe to call from any thread.</p>
+    </section>
+
+    <footer>
+      <span data-l="tr">plsApi v1.3.0 · Check Please! Demo için hayran yapımı modlama API'si. Oyunla resmi bir bağlantısı yoktur.</span>
+      <span data-l="en">plsApi v1.3.0 · A fan-made modding API for Check Please! Demo. Not affiliated with the game's developers.</span>
+    </footer>
+  </main>
+</div>
+
+<!-- Code samples. {{Türkçe::English}} is swapped for the active language. -->
+<script type="text/plain" id="src-log-loaded">[Info   :   BepInEx] Loading [plsApi 1.3.0]
+[Info   :    plsApi] plsApi v1.3.0 loaded. print_game, print_log, Foods and Customers are ready.</script>
+
+<script type="text/plain" id="src-csproj"><Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <AssemblyName>MyMod</AssemblyName>
+    <LangVersion>latest</LangVersion>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+
+    <!-- {{Oyunun kurulu olduğu klasör::Folder the game is installed in}} -->
+    <GameDir>C:\Program Files (x86)\Steam\steamapps\common\Check Please! Demo</GameDir>
+    <ManagedDir>$(GameDir)\CheckPlease_Data\Managed</ManagedDir>
+    <PluginsDir>$(GameDir)\BepInEx\plugins</PluginsDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="plsApi">
+      <HintPath>$(PluginsDir)\plsApi\plsApi.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="BepInEx">
+      <HintPath>$(GameDir)\BepInEx\core\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ManagedDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- {{Her derlemeden sonra DLL'i BepInEx\plugins\MyMod içine kopyalar::Copies the DLL into BepInEx\plugins\MyMod after every build}} -->
+  <Target Name="CopyToPlugins" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="$(PluginsDir)\$(AssemblyName)" />
+  </Target>
+
+</Project></script>
+
+<script type="text/plain" id="src-first">using BepInEx;
+using plsApi;
+using static plsApi.Pls;
+
+namespace MyMod
+{
+    [BepInPlugin("com.yourname.mymod", "MyMod", "1.0.0")]
+    [BepInDependency(PlsApiPlugin.GUID)] // {{plsApi'den sonra yüklen::load after plsApi}}
+    public class MyMod : BaseUnityPlugin
+    {
+        private void Awake()
+        {
+            print_game("{{MyMod yüklendi!::MyMod loaded!}}");
+            print_log("{{MyMod başladı.::MyMod started.}}");
+        }
+    }
+}</script>
+
+<script type="text/plain" id="src-noStatic">using plsApi;
+
+Pls.print_game("{{Merhaba!::Hello!}}");
+Pls.print_log("{{Merhaba log!::Hello log!}}");</script>
+
+<script type="text/plain" id="src-pg-basic">print_game("{{Merhaba Check Please!::Hello Check Please!}}");   // {{beyaz, 5 saniye::white, 5 seconds}}</script>
+
+<script type="text/plain" id="src-pg-color">using UnityEngine; // {{Color için::for Color}}
+
+print_game("{{10 saniye kalır::Stays for 10 seconds}}", 10f);
+print_game("{{Sarı yazı::Yellow text}}", Color.yellow);
+print_game("{{Kırmızı, 3 saniye::Red, 3 seconds}}", Color.red, 3f);
+
+// {{Kendi rengin (R, G, B değerleri 0-1 arası)::Your own color (R, G, B from 0 to 1)}}
+print_game("{{Turuncu::Orange}}", new Color(1f, 0.55f, 0f));
+
+// {{Hex koddan renk::Color from a hex code}}
+ColorUtility.TryParseHtmlString("#7CFC00", out Color lime);
+print_game("{{Açık yeşil::Lime}}", lime, 8f);</script>
+
+<script type="text/plain" id="src-pg-rich">print_game("<b>{{Kalın::Bold}}</b>, <i>{{eğik::italic}}</i>, <color=#FF5577>{{pembe::pink}}</color>");
+print_game("<size=32>{{Büyük yazı::Big text}}</size>");
+print_game("{{Bahşiş::Tip}}: <color=yellow>+15</color> {{altın::gold}}");</script>
+
+<script type="text/plain" id="src-pg-vars">int table = 4;
+float tip = 12.5f;
+
+print_game(table);                                  // "4"
+print_game($"{{Masa::Table}} {table}: {tip} {{altın bahşiş::gold tip}}");
+print_game(Time.timeScale == 0 ? "{{Duraklatıldı::Paused}}" : "{{Oynanıyor::Playing}}");</script>
+
+<script type="text/plain" id="src-pl-basic">print_log("{{Mod başladı::Mod started}}");
+print_log($"{{Müşteri sayısı::Customer count}}: {12}");
+print_log(new Vector3(1, 2, 3)); // "(1.00, 2.00, 3.00)"</script>
+
+<script type="text/plain" id="src-pl-out">[Info   :     MyMod] {{Mod başladı::Mod started}}
+[Info   :     MyMod] {{Müşteri sayısı::Customer count}}: 12
+[Info   :     MyMod] (1.00, 2.00, 3.00)</script>
+
+<script type="text/plain" id="src-inputref"><Reference Include="Unity.InputSystem">
+  <HintPath>$(ManagedDir)\Unity.InputSystem.dll</HintPath>
+  <Private>false</Private>
+</Reference></script>
+
+<script type="text/plain" id="src-full">using BepInEx;
+using plsApi;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using static plsApi.Pls;
+
+namespace HelloMod
+{
+    [BepInPlugin("com.example.hellomod", "HelloMod", "1.0.0")]
+    [BepInDependency(PlsApiPlugin.GUID)]
+    public class HelloMod : BaseUnityPlugin
+    {
+        private int presses;
+
+        private void Awake()
+        {
+            print_log("{{HelloMod yüklendi!::HelloMod loaded!}}");
+            print_game("{{Merhaba Check Please!::Hello Check Please!}}");
+            print_game("{{Bu sarı ve 10 saniye kalır::This one is yellow and stays 10 seconds}}", Color.yellow, 10f);
+            print_game("<b>{{Zengin::Rich}}</b> <color=#7CFC00>{{metin::text}}</color> {{da çalışır::works too}}");
+        }
+
+        private void Update()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard != null && keyboard.f8Key.wasPressedThisFrame)
+            {
+                presses++;
+                print_game($"{{F8'e {presses} kez basıldı::F8 pressed {presses} time(s)}}", Color.cyan);
+                print_log($"{{F8'e {presses} kez basıldı::F8 pressed {presses} time(s)}}");
+            }
+        }
+    }
+}</script>
+
+<script type="text/plain" id="src-build">dotnet build -c Release</script>
+
+<script type="text/plain" id="src-tpl-install"># {{Release'ten indirdiğin TemplateProject zip'ini aç, klasörün içinde çalıştır::Unzip TemplateProject from the release and run this inside the folder}}
+cd TemplateProject
+dotnet new install .</script>
+
+<script type="text/plain" id="src-tpl-new">dotnet new checkplease-mod -n ExtraFoods --authorName ahmet
+
+# {{Oyun başka klasördeyse::If the game is in another folder}}
+dotnet new checkplease-mod -n ExtraFoods --authorName ahmet --gameDir "D:\Games\Check Please! Demo"</script>
+
+<script type="text/plain" id="src-food-csproj"><!-- {{sprites klasöründeki PNG'leri plugins\MyMod\sprites içine kopyalar::Copies the PNGs in sprites into plugins\MyMod\sprites}} -->
+<Target Name="CopySprites" AfterTargets="Build">
+  <ItemGroup>
+    <ModSprites Include="sprites\*.png" />
+  </ItemGroup>
+  <Copy SourceFiles="@(ModSprites)" DestinationFolder="$(PluginsDir)\$(AssemblyName)\sprites" />
+</Target></script>
+
+<script type="text/plain" id="src-food-basic">using BepInEx;
+using plsApi;
+
+namespace MyMod
+{
+    [BepInPlugin("com.yourname.mymod", "MyMod", "1.0.0")]
+    [BepInDependency(PlsApiPlugin.GUID)]
+    public class MyMod : BaseUnityPlugin
+    {
+        private void Awake()
+        {
+            Foods.Register(new CustomFood("pizza", "Pizza") // {{kimlik, İngilizce isim::id, English name}}
+            {
+                SpritePath = "sprites/pizza.png",            // {{DLL'in yanındaki sprites klasörü::sprites folder next to the DLL}}
+                Names = { ["tr"] = "Pizza", ["de"] = "Pizza" },
+                Price = 140,
+                CookTime = 10f,
+                EatTime = 12f,
+                Kind = FoodKind.MainDish,
+                MainIngredient = Ingredient.Grains,
+                SecondIngredient = Ingredient.Dairy,
+                Tags = DishTags.Hot | DishTags.Heavy
+            });
+        }
+    }
+}</script>
+
+<script type="text/plain" id="src-food-log">[Info   :plsApi.Foods] Registered custom food Pizza (pizza)
+[Info   :plsApi.Foods] Menu now has N dishes (1 from mods).</script>
+
+<script type="text/plain" id="src-food-events">using plsApi;
+using UnityEngine;
+using static plsApi.Pls;
+
+CustomFood pizza = Foods.Register(new CustomFood("pizza", "Pizza") { SpritePath = "sprites/pizza.png" });
+
+// {{Bir müşteri pizza sipariş edince::When a customer orders pizza}}
+pizza.Ordered += food => print_game("{{Biri pizza sipariş etti!::Someone ordered pizza!}}", Color.yellow);
+
+// {{Pizza siparişi veren müşteriye servis edilince::When the pizza reaches the customer who ordered it}}
+pizza.Served += food => print_log($"{food.Name} {{servis edildi::served}}");</script>
+
+<script type="text/plain" id="src-food-test">using UnityEngine.InputSystem;
+
+private void Update()
+{
+    var keyboard = Keyboard.current;
+    if (keyboard != null && keyboard.f9Key.wasPressedThisFrame)
+    {
+        Foods.ForceNextOrder("pizza");
+        print_game("{{Sıradaki müşteri pizza isteyecek::Next customer will order pizza}}", Color.cyan);
+    }
+
+    // {{F11: oyundaki tüm yemek kimliklerini log'a yaz (oyun yüklendikten sonra)::F11: write every dish id in the game to the log (after the game has loaded)}}
+    if (keyboard != null && keyboard.f11Key.wasPressedThisFrame)
+        print_log(string.Join(", ", Foods.GameFoodIds()));
+}</script>
+
+<script type="text/plain" id="src-cust-single">Customers.Register(new CustomCustomer("ghost", "Ghost")   // {{kimlik, İngilizce isim::id, English name}}
+{
+    SpritePath = "sprites/ghost.png",                        // {{tüm karakter, ayaklar alt kenarda::whole character, feet on the bottom edge}}
+    Names = { ["tr"] = "Hayalet" },
+    Description = "Tips in spooky coins.",
+    Likes = { FoodKind.Sweet },
+    Allergies = { Ingredient.Meat }
+});</script>
+
+<script type="text/plain" id="src-cust-arms">Customers.Register(new CustomCustomer("robot", "Robot")
+{
+    SpritePath = "sprites/robot_body.png",    // {{kolsuz gövde::body without arms}}
+    ArmSpritePath = "sprites/robot_arm.png",  // {{iki kol için de aynı resim::same image for both arms}}
+    LeftShoulder = new Vector2(48, 180),      // {{gövde resminde, sol üstten piksel::pixels in the body image, from the top-left}}
+    RightShoulder = new Vector2(172, 180),
+    AnimationsFrom = "Elf",                   // {{animasyonlar bu ırktan ödünç::animations borrowed from this race}}
+    Scale = 1f,
+    SpawnWeight = 2f,                         // {{bir oyun ırkının iki katı sık gelir::comes twice as often as one game race}}
+    Names = { ["tr"] = "Robot" },
+    Likes = { Ingredient.Nuts, FoodKind.Beverage },
+    Dislikes = { FoodKind.Sweet },
+    Allergies = { Ingredient.Seafood }
+});</script>
+
+<script type="text/plain" id="src-cust-log">[Info   :plsApi.Customers] Registered custom customer Robot (robot)
+[Info   :plsApi.Customers] Game races: Elf, Dwarf, Orc, ...
+[Info   :plsApi.Customers] Game maps: ...
+[Info   :plsApi.Customers] Built customer 'robot' from Elf: 220x420px body, arms: separate, sit sprite: False.</script>
+
+<script type="text/plain" id="src-cust-seats">SeatRules =
+{
+    // {{Bir haritada, 2 yıldızdan itibaren: %70 ihtimalle şarkıcının yanını çok ister::On one map, from 2 stars: 70% chance to love the singer seat}}
+    new SeatRule(SeatSpot.Singer, SeatFeeling.Loves, 0.7f) { MapId = "MAP_ID", MinStar = 2 },  // {{MAP_ID: LogOutput'taki "Game maps" satırından::MAP_ID: from the "Game maps" line in LogOutput}}
+
+    // {{Her yerde: %40 ihtimalle pencereden nefret eder::Everywhere: 40% chance to hate window seats}}
+    new SeatRule(SeatSpot.Window, SeatFeeling.Hates, 0.4f),
+
+    // {{0-1 yıldızda: %25 ihtimalle pencereyi biraz ister::At 0-1 stars: 25% chance to like window seats a bit}}
+    new SeatRule(SeatSpot.Window, SeatFeeling.Likes, 0.25f) { MaxStar = 1 }
+},
+SeatRulesReplaceGame = true   // {{hiçbiri tutmazsa tercih yok::no preference when none of them rolls true}}</script>
+
+<script type="text/plain" id="src-cust-neighbors">Customers.Register(new CustomCustomer("robot", "Robot")
+{
+    SpritePath = "sprites/robot_body.png",
+    PluralNames = { ["tr"] = "Robotlar" },
+
+    // {{0 = iyi anlaşır, 1 = hafif öfkelenir, 2 = kavga eder (biri ölür)::0 = get along, 1 = mildly annoyed, 2 = fight (one dies)}}
+    Neighbors =
+    {
+        ["Dwarf"] = 0,                 // {{oyunun ırkı::a game race}}
+        ["Elf"]   = Neighbor.Annoyed,  // {{1 ile aynı::same as 1}}
+        ["ghost"] = Neighbor.Fight     // {{başka bir mod müşterisi::another mod customer}}
+    },
+    NeighborsMutual = true             // {{karşı taraf da aynısını hisseder::the other side feels the same}}
+});</script>
+
+<script type="text/plain" id="src-cust-test">CustomCustomer robot = Customers.Register(new CustomCustomer("robot", "Robot") { SpritePath = "sprites/robot.png" });
+
+// {{Biri restorana girince::When one walks in}}
+robot.Spawned += c => print_game("{{Bir robot geldi!::A robot walked in!}}", Color.cyan);
+
+// {{Sıradaki müşteri robot olsun (oyunun ırk adlarıyla da çalışır: "Elf", "Orc"...)::Make the next customer a robot (also works with game race names: "Elf", "Orc"...)}}
+Customers.ForceNextCustomer("robot");</script>
+
+<script type="text/plain" id="src-cust-full">using BepInEx;
+using plsApi;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using static plsApi.Pls;
+
+namespace CustomerMod
+{
+    [BepInPlugin("com.example.customermod", "CustomerMod", "1.0.0")]
+    [BepInDependency(PlsApiPlugin.GUID)]
+    public class CustomerMod : BaseUnityPlugin
+    {
+        private void Awake()
+        {
+            // {{Kolsuz gövde + iki taraf için tek kol resmi::Body without arms + one arm image for both sides}}
+            var robot = Customers.Register(new CustomCustomer("robot", "Robot")
+            {
+                SpritePath = "sprites/robot_body.png",
+                ArmSpritePath = "sprites/robot_arm.png",
+                LeftShoulder = new Vector2(48, 180),
+                RightShoulder = new Vector2(172, 180),
+                Names = { ["tr"] = "Robot" },
+                Description = "Runs on oil and gossip.",
+                Descriptions = { ["tr"] = "Yağ ve dedikoduyla çalışır." },
+                AnimationsFrom = "Elf",
+                SpawnWeight = 2f,
+                Likes = { Ingredient.Nuts, FoodKind.Beverage },
+                Dislikes = { FoodKind.Sweet },
+                Allergies = { Ingredient.Seafood },
+                PluralNames = { ["tr"] = "Robotlar" },
+                Neighbors = { ["Dwarf"] = 0, ["Elf"] = 1, ["ghost"] = 2 },
+                SeatRules =
+                {
+                    new SeatRule(SeatSpot.Window, SeatFeeling.Hates, 0.6f),
+                    new SeatRule(SeatSpot.Singer, SeatFeeling.Loves, 0.5f) { MinStar = 1 }
+                }
+            });
+
+            // {{Tek parça sprite: kollar resmin içinde::A single sprite: the arms are part of the picture}}
+            var ghost = Customers.Register(new CustomCustomer("ghost", "Ghost")
+            {
+                SpritePath = "sprites/ghost.png",
+                Names = { ["tr"] = "Hayalet" },
+                Description = "Tips in spooky coins.",
+                Scale = 0.9f,
+                Likes = { FoodKind.Sweet },
+                Allergies = { Ingredient.Meat },
+                SeatRules =
+                {
+                    new SeatRule(SeatSpot.Window, SeatFeeling.Loves, 0.8f)
+                }
+            });
+
+            robot.Spawned += c => print_game("{{Bir robot geldi!::A robot walked in!}}", Color.cyan);
+            ghost.Spawned += c => print_log("{{Bir hayalet süzüldü.::A ghost floated in.}}");
+        }
+
+        private void Update()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+            if (keyboard.f11Key.wasPressedThisFrame)
+                Customers.ForceNextCustomer("robot");
+            if (keyboard.f12Key.wasPressedThisFrame)
+                Customers.ForceNextCustomer("ghost");
+        }
+    }
+}</script>
+
+<script type="text/plain" id="src-food-full">using BepInEx;
+using plsApi;
+using UnityEngine;
+using UnityEngine.InputSystem;
+using static plsApi.Pls;
+
+namespace PizzaMod
+{
+    [BepInPlugin("com.example.pizzamod", "PizzaMod", "1.0.0")]
+    [BepInDependency(PlsApiPlugin.GUID)]
+    public class PizzaMod : BaseUnityPlugin
+    {
+        private CustomFood pizza;
+        private CustomFood lemonade;
+
+        private void Awake()
+        {
+            pizza = Foods.Register(new CustomFood("pizza", "Pizza")
+            {
+                SpritePath = "sprites/pizza.png",
+                Names = { ["tr"] = "Pizza", ["de"] = "Pizza" },
+                Price = 140,
+                CookTime = 10f,
+                EatTime = 12f,
+                Kind = FoodKind.MainDish,
+                MainIngredient = Ingredient.Grains,
+                SecondIngredient = Ingredient.Dairy,
+                Tags = DishTags.Hot | DishTags.Heavy,
+                Popularity = 2f // {{iki kat sık sipariş edilir::ordered twice as often}}
+            });
+
+            lemonade = Foods.Register(new CustomFood("lemonade", "Lemonade")
+            {
+                SpritePath = "sprites/lemonade.png",
+                Names = { ["tr"] = "Limonata", ["de"] = "Limonade" },
+                Price = 60,
+                CookTime = 4f,
+                EatTime = 6f,
+                Kind = FoodKind.Beverage,
+                MainIngredient = Ingredient.Flora,
+                Tags = DishTags.Fresh
+            });
+
+            pizza.Ordered += food => print_game("{{Biri pizza sipariş etti!::A customer ordered pizza!}}", Color.yellow);
+            pizza.Served += food => print_log("{{Pizza servis edildi.::Pizza served.}}");
+            lemonade.Served += food => print_log("{{Limonata servis edildi.::Lemonade served.}}");
+        }
+
+        private void Update()
+        {
+            var keyboard = Keyboard.current;
+            if (keyboard == null)
+                return;
+
+            if (keyboard.f9Key.wasPressedThisFrame)
+            {
+                Foods.ForceNextOrder("pizza");
+                print_game("{{Sıradaki müşteri pizza isteyecek::Next customer will order pizza}}", Color.cyan);
+            }
+            if (keyboard.f10Key.wasPressedThisFrame)
+            {
+                Foods.ForceNextOrder("lemonade");
+                print_game("{{Sıradaki müşteri limonata isteyecek::Next customer will order lemonade}}", Color.cyan);
+            }
+        }
+    }
+}</script>
+
+<script type="text/plain" id="src-cfg">[print_game]
+
+## {{1080p'deki yazı boyutu. Ekran yüksekliğine göre ölçeklenir.::Font size at 1080p. Scales with the screen height.}}
+FontSize = 22
+
+## {{Süre verilmezse mesajın ekranda kalacağı saniye.::Seconds a message stays on screen when no duration is given.}}
+DefaultDuration = 5
+
+## {{Aynı anda en fazla kaç mesaj görünür. En eski önce silinir.::Maximum number of messages shown at once. The oldest one is removed first.}}
+MaxLines = 12
+
+## {{Okunabilirlik için her mesajın arkasına koyu kutu çiz.::Draw a dark box behind each message for readability.}}
+ShowBackground = true</script>
+
+<script>window.Prism = window.Prism || {}; window.Prism.manual = true;</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  /* ---------- language ---------- */
+  const root = document.documentElement;
+  let lang = "tr";
+  try {
+    const saved = localStorage.getItem("plsapi-lang");
+    if (saved === "tr" || saved === "en") lang = saved;
+  } catch (e) {}
+
+  const pick = (src) => src.replace(/\{\{([\s\S]*?)::([\s\S]*?)\}\}/g, (_, tr, en) => (lang === "en" ? en : tr));
+
+  /* ---------- code blocks ---------- */
+  const blocks = Array.from(document.querySelectorAll(".code[data-src]"));
+  blocks.forEach((block) => {
+    const head = document.createElement("div");
+    head.className = "code-head";
+    const file = document.createElement("span");
+    file.className = "file";
+    file.textContent = block.dataset.file || "";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy";
+    head.append(file, btn);
+    const pre = document.createElement("pre");
+    const code = document.createElement("code");
+    const l = block.dataset.lang;
+    if (l && l !== "none") code.className = "language-" + l;
+    pre.append(code);
+    block.append(head, pre);
+    btn.addEventListener("click", () => copyText(code.textContent, btn));
+  });
+
+  function renderCode() {
+    blocks.forEach((block) => {
+      const src = document.getElementById("src-" + block.dataset.src);
+      const code = block.querySelector("code");
+      code.textContent = src ? pick(src.textContent) : "";
+      if (window.Prism && Prism.highlightElement && code.className) Prism.highlightElement(code);
+      const btn = block.querySelector(".copy");
+      if (!btn.classList.contains("done")) btn.textContent = lang === "en" ? "Copy" : "Kopyala";
+    });
+  }
+
+  function copyText(text, btn) {
+    const ok = () => {
+      btn.classList.add("done");
+      const label = btn.querySelector("[data-l]") ? null : btn.textContent;
+      if (label !== null) btn.textContent = lang === "en" ? "Copied" : "Kopyalandı";
+      setTimeout(() => {
+        btn.classList.remove("done");
+        if (label !== null) btn.textContent = lang === "en" ? "Copy" : "Kopyala";
+      }, 1400);
+    };
+    const fallback = () => {
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.append(ta);
+      ta.select();
+      let done = false;
+      try { done = document.execCommand("copy"); } catch (e) {}
+      ta.remove();
+      if (done) ok();
+    };
+    try {
+      navigator.clipboard.writeText(text).then(ok, fallback);
+    } catch (e) {
+      fallback();
+    }
+  }
+
+  function setLang(next) {
+    lang = next;
+    root.setAttribute("data-lang", lang);
+    root.setAttribute("lang", lang);
+    document.querySelectorAll("[data-set-lang]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.setLang === lang)));
+    try { localStorage.setItem("plsapi-lang", lang); } catch (e) {}
+    renderCode();
+    onLangPreview();
+  }
+  document.querySelectorAll("[data-set-lang]").forEach((b) => b.addEventListener("click", () => setLang(b.dataset.setLang)));
+
+  /* ---------- toc highlight ---------- */
+  const tocLinks = Array.from(document.querySelectorAll(".toc a"));
+  const sections = tocLinks.map((a) => document.querySelector(a.getAttribute("href"))).filter(Boolean);
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach((en) => {
+        if (en.isIntersecting) {
+          tocLinks.forEach((a) => a.classList.toggle("on", a.getAttribute("href") === "#" + en.target.id));
+        }
+      });
+    }, { rootMargin: "-30% 0px -60% 0px" });
+    sections.forEach((s) => io.observe(s));
+  }
+
+  /* ---------- game screen preview (canvas) ---------- */
+  const W = 1280, H = 720;
+  const canvas = document.getElementById("scene");
+  const ctx = canvas.getContext("2d");
+  const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  // Unity's built-in Color values
+  const COLORS = [
+    { name: "white", rgb: [1, 1, 1] },
+    { name: "yellow", rgb: [1, 0.92, 0.016] },
+    { name: "red", rgb: [1, 0, 0] },
+    { name: "green", rgb: [0, 1, 0] },
+    { name: "cyan", rgb: [0, 1, 1] },
+    { name: "magenta", rgb: [1, 0, 1] },
+    { name: "gray", rgb: [0.5, 0.5, 0.5] },
+  ];
+  const css = (rgb, a) => `rgba(${Math.round(rgb[0] * 255)},${Math.round(rgb[1] * 255)},${Math.round(rgb[2] * 255)},${a})`;
+
+  let color = COLORS[0];
+  const swWrap = document.getElementById("swatches");
+  COLORS.forEach((c, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "sw";
+    b.id = "sw-" + c.name;
+    b.title = "Color." + c.name;
+    b.setAttribute("aria-label", "Color." + c.name);
+    b.setAttribute("aria-pressed", String(i === 0));
+    b.style.background = css(c.rgb, 1);
+    b.addEventListener("click", () => {
+      color = c;
+      swWrap.querySelectorAll(".sw").forEach((s) => s.setAttribute("aria-pressed", String(s === b)));
+      updateCall();
+    });
+    swWrap.append(b);
+  });
+
+  const msgInput = document.getElementById("msg");
+  const durInput = document.getElementById("dur");
+  const callEl = document.getElementById("call");
+
+  const SAMPLE_MSG = { tr: "Merhaba Check Please!", en: "Hello Check Please!" };
+  msgInput.value = SAMPLE_MSG[lang];
+
+  function duration() {
+    const d = parseFloat(durInput.value);
+    return isFinite(d) && d > 0 ? d : 5;
+  }
+  function csString(s) {
+    return '"' + s.replace(/\\/g, "\\\\").replace(/"/g, '\\"') + '"';
+  }
+  function fmtFloat(d) {
+    return (Number.isInteger(d) ? String(d) : String(d)) + "f";
+  }
+  function callText() {
+    const d = duration();
+    const args = [csString(msgInput.value)];
+    if (color.name !== "white") args.push("Color." + color.name);
+    if (d !== 5) args.push(fmtFloat(d));
+    return "print_game(" + args.join(", ") + ");";
+  }
+  function updateCall() {
+    callEl.textContent = callText();
+  }
+  msgInput.addEventListener("input", updateCall);
+  durInput.addEventListener("input", updateCall);
+  document.getElementById("copy-call").addEventListener("click", (e) => copyText(callEl.textContent, e.currentTarget));
+
+  // Lines on the fake screen, mirroring plsApi's GameOverlay
+  let lines = [];
+  let samplesShown = true;
+  const now = () => performance.now() / 1000;
+
+  function samples() {
+    return lang === "en"
+      ? [
+          { text: "Hello Check Please!", rgb: [1, 1, 1] },
+          { text: "This one is yellow and stays 10 seconds", rgb: [1, 0.92, 0.016] },
+          { text: "<b>Rich</b> <color=#7CFC00>text</color> works too", rgb: [1, 1, 1] },
+        ]
+      : [
+          { text: "Merhaba Check Please!", rgb: [1, 1, 1] },
+          { text: "Bu sarı ve 10 saniye kalır", rgb: [1, 0.92, 0.016] },
+          { text: "<b>Zengin</b> <color=#7CFC00>metin</color> de çalışır", rgb: [1, 1, 1] },
+        ];
+  }
+  function showSamples() {
+    lines = samples().map((s) => ({ ...s, expires: Infinity }));
+    samplesShown = true;
+  }
+
+  function addLine(text, rgb, d) {
+    if (samplesShown) { lines = []; samplesShown = false; }
+    lines.push({ text, rgb, expires: now() + d });
+    while (lines.length > 12) lines.shift();
+    kick();
+  }
+
+  document.getElementById("run").addEventListener("click", () => {
+    addLine(msgInput.value || "null", color.rgb, duration());
+  });
+  msgInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") { e.preventDefault(); addLine(msgInput.value || "null", color.rgb, duration()); }
+  });
+  document.getElementById("clear").addEventListener("click", () => {
+    lines = [];
+    samplesShown = false;
+    draw();
+  });
+
+  // Unity rich text -> runs
+  const NAMED = { white: "#ffffff", black: "#000000", red: "#ff0000", green: "#008000", lime: "#00ff00", blue: "#0000ff", yellow: "#ffff00", cyan: "#00ffff", aqua: "#00ffff", magenta: "#ff00ff", orange: "#ffa500", grey: "#808080", gray: "#808080", purple: "#800080", brown: "#a52a2a", silver: "#c0c0c0", navy: "#000080", teal: "#008080", olive: "#808000", maroon: "#800000" };
+  function parseRich(text) {
+    const runs = [];
+    const stack = { b: 0, i: 0, color: [], size: [] };
+    const re = /<(\/?)(b|i|color|size)(?:=([^>]*))?>/gi;
+    let last = 0, m;
+    const push = (t) => {
+      if (!t) return;
+      runs.push({ t, b: stack.b > 0, i: stack.i > 0, color: stack.color[stack.color.length - 1] || null, size: stack.size[stack.size.length - 1] || null });
+    };
+    while ((m = re.exec(text))) {
+      push(text.slice(last, m.index));
+      last = re.lastIndex;
+      const closing = m[1] === "/", tag = m[2].toLowerCase(), val = (m[3] || "").replace(/["']/g, "").trim();
+      if (tag === "b") stack.b += closing ? -1 : 1;
+      else if (tag === "i") stack.i += closing ? -1 : 1;
+      else if (tag === "color") closing ? stack.color.pop() : stack.color.push(NAMED[val.toLowerCase()] || val);
+      else if (tag === "size") closing ? stack.size.pop() : stack.size.push(parseFloat(val) || null);
+    }
+    push(text.slice(last));
+    return runs;
+  }
+
+  // static background: a cozy restaurant window, drawn once per language
+  const bg = document.createElement("canvas");
+  bg.width = W; bg.height = H;
+  function drawBackground() {
+    const g = bg.getContext("2d");
+    const sky = g.createLinearGradient(0, 0, 0, H * 0.75);
+    sky.addColorStop(0, "#8ccbee");
+    sky.addColorStop(1, "#d8eefa");
+    g.fillStyle = sky;
+    g.fillRect(0, 0, W, H);
+
+    // sun and clouds
+    g.fillStyle = "#ffd45c";
+    g.beginPath(); g.arc(250, 70, 46, 0, Math.PI * 2); g.fill();
+    g.fillStyle = "rgba(255,255,255,.85)";
+    [[620, 110, 70], [690, 95, 55], [560, 120, 45], [980, 170, 60], [1040, 160, 45]].forEach(([x, y, r]) => {
+      g.beginPath(); g.ellipse(x, y, r, r * 0.55, 0, 0, Math.PI * 2); g.fill();
+    });
+
+    // distant castle
+    g.fillStyle = "#6f95b5";
+    g.fillRect(300, 300, 160, 180);
+    for (let i = 0; i < 5; i++) g.fillRect(300 + i * 36, 284, 20, 18);
+    g.fillRect(420, 250, 50, 230);
+    g.fillStyle = "#86a9c6";
+    g.fillRect(470, 340, 260, 140);
+
+    // window frame
+    g.fillStyle = "#6b3a22";
+    g.fillRect(0, 0, W, 14);
+    g.fillRect(500, 0, 22, H * 0.7);
+    g.fillRect(0, 300, 500, 20);
+    g.fillRect(0, 0, 18, H * 0.7);
+
+    // table
+    const wood = g.createLinearGradient(0, H * 0.68, 0, H);
+    wood.addColorStop(0, "#8a4a26");
+    wood.addColorStop(1, "#5e2f17");
+    g.fillStyle = wood;
+    g.fillRect(0, H * 0.68, W, H * 0.32);
+    g.strokeStyle = "rgba(0,0,0,.18)";
+    g.lineWidth = 3;
+    for (let y = H * 0.74; y < H; y += 46) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y + 8); g.stroke(); }
+
+    // flower vase
+    g.fillStyle = "#4a7fc0";
+    g.beginPath(); g.moveTo(130, 490); g.lineTo(230, 490); g.lineTo(215, 640); g.lineTo(145, 640); g.closePath(); g.fill();
+    g.fillStyle = "#3b8a3d";
+    [[150, 420], [210, 400], [180, 380]].forEach(([x, y]) => { g.beginPath(); g.ellipse(x, y, 28, 60, 0.4, 0, Math.PI * 2); g.fill(); });
+    g.fillStyle = "#b3202e";
+    [[175, 400, 44], [120, 430, 26], [235, 425, 24]].forEach(([x, y, r]) => { g.beginPath(); g.arc(x, y, r, 0, Math.PI * 2); g.fill(); });
+    g.fillStyle = "#f6ead4";
+    g.beginPath(); g.arc(175, 400, 14, 0, Math.PI * 2); g.fill();
+
+    // coins
+    for (let i = 0; i < 4; i++) {
+      g.fillStyle = i % 2 ? "#e2a630" : "#f2c14e";
+      g.beginPath(); g.ellipse(410, 660 - i * 12, 52, 20, 0, 0, Math.PI * 2); g.fill();
+      g.strokeStyle = "#b07a1c"; g.lineWidth = 2; g.stroke();
+    }
+
+    // open menu book
+    g.save();
+    g.translate(800, 400);
+    g.rotate(-0.06);
+    g.fillStyle = "rgba(0,0,0,.18)";
+    g.fillRect(-250, -300, 520, 640);
+    g.fillStyle = "#f6ead4";
+    g.fillRect(-260, -310, 520, 640);
+    g.strokeStyle = "#c9b48e"; g.lineWidth = 3;
+    g.strokeRect(-235, -285, 470, 590);
+    g.fillStyle = "#3a2a24";
+    g.textAlign = "center";
+    g.font = '72px "Patrick Hand", "Comic Sans MS", cursive';
+    g.fillText(lang === "en" ? "MENU" : "MENÜ", -20, -170);
+    g.fillRect(-140, -150, 240, 4);
+    g.save(); g.translate(150, -200); g.rotate(-0.08);
+    g.strokeStyle = "#b3202e"; g.lineWidth = 4; g.strokeRect(-55, -26, 110, 46);
+    g.fillStyle = "#b3202e"; g.font = '34px "Patrick Hand", cursive'; g.fillText("DEMO", 0, 8);
+    g.restore();
+    g.fillStyle = "#3a2a24";
+    g.font = '48px "Patrick Hand", "Comic Sans MS", cursive';
+    const items = lang === "en" ? ["NEW GAME", "SETTINGS", "CREDITS", "QUIT"] : ["YENİ OYUN", "AYARLAR", "EMEĞİ GEÇENLER", "ÇIKIŞ"];
+    items.forEach((t, i) => {
+      g.fillStyle = i === 3 ? "#9b2230" : "#3a2a24";
+      g.fillText(t, -10, -60 + i * 90);
+    });
+    g.restore();
+
+    // version label like the real game
+    g.fillStyle = "rgba(255,255,255,.85)";
+    g.font = '600 18px "Atkinson Hyperlegible", system-ui, sans-serif';
+    g.textAlign = "right";
+    g.fillText("v0.5 · demo", W - 20, H - 18);
+  }
+
+  function draw() {
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(bg, 0, 0);
+
+    const t = now();
+    lines = lines.filter((l) => l.expires > t);
+
+    // same numbers as GameOverlay.cs, at 720p
+    const s = Math.max(0.5, H / 1080);
+    const fontSize = Math.max(8, Math.round(22 * s));
+    const pad = 6 * s, x = 12 * s, gap = 4 * s, shadow = Math.max(1, 2 * s);
+    let y = 10 * s;
+    const fontFamily = 'Arial, "Liberation Sans", "Helvetica Neue", sans-serif';
+
+    lines.forEach((line) => {
+      const remaining = line.expires - t;
+      const alpha = reduceMotion ? 1 : Math.min(1, Math.max(0, remaining / 0.5));
+      const runs = parseRich(line.text);
+      let width = 0, height = fontSize * 1.25;
+      runs.forEach((r) => {
+        const size = r.size ? r.size * s : fontSize;
+        r.font = `${r.i ? "italic " : ""}${r.b ? "bold " : ""}${size}px ${fontFamily}`;
+        ctx.font = r.font;
+        r.w = ctx.measureText(r.t).width;
+        width += r.w;
+        height = Math.max(height, size * 1.25);
+      });
+
+      ctx.fillStyle = `rgba(0,0,0,${0.5 * alpha})`;
+      ctx.fillRect(x, y, width + pad * 2 + 4, height + pad * 2);
+
+      ctx.textBaseline = "top";
+      ctx.textAlign = "left";
+      let cx = x + pad + 2;
+      runs.forEach((r) => {
+        ctx.font = r.font;
+        ctx.fillStyle = `rgba(0,0,0,${0.8 * alpha})`;
+        ctx.fillText(r.t, cx + shadow, y + pad + shadow + 2);
+        ctx.globalAlpha = alpha;
+        ctx.fillStyle = r.color || css(line.rgb, 1);
+        ctx.fillText(r.t, cx, y + pad + 2);
+        ctx.globalAlpha = 1;
+        cx += r.w;
+      });
+      y += height + pad * 2 + gap;
+    });
+  }
+
+  let raf = 0;
+  function loop() {
+    draw();
+    raf = lines.some((l) => isFinite(l.expires)) ? requestAnimationFrame(loop) : 0;
+  }
+  function kick() {
+    if (!raf) raf = requestAnimationFrame(loop);
+  }
+
+  function onLangPreview() {
+    drawBackground();
+    if (samplesShown) showSamples();
+    if (msgInput.value === SAMPLE_MSG.tr || msgInput.value === SAMPLE_MSG.en || msgInput.value === "") {
+      msgInput.value = SAMPLE_MSG[lang];
+      updateCall();
+    }
+    draw();
+  }
+
+  showSamples();
+  setLang(lang);
+  updateCall();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { drawBackground(); draw(); });
+})();
+</script>
+</body>
+</html>
